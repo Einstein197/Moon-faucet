@@ -153,7 +153,7 @@
 
       // 4. Check if Lightning address exists (via Worker)
       try {
-        const verifyUrl = `https://ln-verify.shadowlegendcg.workers.dev/?name=${name}&domain=${domain}`;
+        const verifyUrl = `https://ln-verify.shadowlegendcg.workers.dev?name=${name}&domain=${domain}`;
         const check = await fetch(verifyUrl).then(r => r.json());
 
         if (!check.valid) {
