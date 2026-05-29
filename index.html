@@ -141,10 +141,24 @@
 
     giftBtn.onclick = () => {
       const gifts = ["🚀 Rocket", "🎡 Wheel", "🎁 Gift Box"];
-      const sats = Math.floor(Math.random() * 50) + 1;
+
+      const roll = Math.random();
+      let sats = 0;
+
+      if (roll < 0.70) {
+        sats = Math.floor(Math.random() * 10) + 1;        // 1–10
+      } else if (roll < 0.90) {
+        sats = Math.floor(Math.random() * 15) + 11;       // 11–25
+      } else if (roll < 0.98) {
+        sats = Math.floor(Math.random() * 15) + 26;       // 26–40
+      } else {
+        sats = Math.floor(Math.random() * 10) + 41;       // 41–50
+      }
+
       const gift = gifts[Math.floor(Math.random() * gifts.length)];
       giftResult.textContent = `You opened a ${gift} and received ${sats} sats from MOON! 🌕`;
     };
+
   </script>
 </body>
 </html>
