@@ -15,37 +15,24 @@
       justify-content: center;
       height: 100vh;
       margin: 0;
-      padding-bottom: 40px; /* add space at bottom */
-      
-    }
-
-    #MoonTitle {
-      background: linear-gradient(90deg, #ffcc00, #ff9900);
-      color: #0d0d0d;
-      text-align: center;
-      padding: 20px 0;
-      font-size: 2rem;
-      font-weight: 700;
-      border-radius: 8px;
-      box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
+      padding-bottom: 40px;
     }
 
     #MoonBanner {
       display: block;
       width: 100%;
-      background: #000; /* optional if you want a background behind the image */
-      border-radius: 12px; /* rounds the edges */
-      margin-bottom: 5px; /* gap under the banner */
+      background: #000;
+      border-radius: 12px;
+      margin-bottom: 5px;
     }
 
     #MoonBanner img {
       width: 100%;
       height: auto;
       display: block;
-      border-radius: 12px; /* rounds the image too */
+      border-radius: 12px;
     }
 
-    /* ADS */
     #frame {
       width: 100%;
       margin: auto;
@@ -58,7 +45,7 @@
       padding: 0;
       width: 70%;
       height: 60px;
-      border-radius: 12px; /* rounds the edges */
+      border-radius: 12px;
       overflow: hidden;
       display: block;
       margin: auto;
@@ -72,6 +59,7 @@
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
     }
+
     input, button {
       margin: 10px;
       padding: 10px;
@@ -79,15 +67,18 @@
       border-radius: 6px;
       border: none;
     }
+
     input {
       width: 80%;
     }
+
     button {
       background: #ffcc00;
       cursor: pointer;
       color: #000;
       font-weight: bold;
     }
+
     .gift {
       margin-top: 20px;
       font-size: 1.2rem;
@@ -95,26 +86,22 @@
   </style>
 </head>
 <body>
+
   <a href="https://kryptonlegend.fun" id="MoonBanner">
     <img src="banner.png" alt="Moon Faucet Banner">
   </a>
-  <!-- BEGIN AADS AD UNIT 2439609 -->
 
-<div id="frame">
-  <iframe data-aa="2439609" src="//acceptable.a-ads.com/2439609/?size=Adaptive"></iframe>
-</div>
+  <div id="frame">
+    <iframe data-aa="2439609" src="//acceptable.a-ads.com/2439609/?size=Adaptive"></iframe>
+  </div>
 
-
-<!-- END AADS AD UNIT 2439609 -->
   <div class="container">
     <h1>🚀 MOON Faucet</h1>
     <p>Enter your Lightning address, complete captcha, and claim your sats!</p>
 
     <input type="text" placeholder="cat@discoverlightning.org" id="linkInput" />
 
-    <!-- Real hCaptcha widget -->
     <div class="h-captcha" data-sitekey="a7725132-7912-4624-a0fe-e614b40c1a7e"></div>
-
 
     <button id="giftBtn" style="display:none;">Open Gift 🎁</button>
     <div class="gift" id="giftResult"></div>
@@ -122,41 +109,38 @@
 
   <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 
-<script>
-  const giftBtn = document.getElementById("giftBtn");
-  const giftResult = document.getElementById("giftResult");
+  <script>
+    const giftBtn = document.getElementById("giftBtn");
+    const giftResult = document.getElementById("giftResult");
 
-  // Wait for everything to load (fixes hcaptcha undefined issue)
-  window.onload = function() {
-    hcaptcha.on('success', function() {
-      giftBtn.style.display = "inline-block";
-    });
-  };
+    // Ensure hCaptcha is fully loaded before attaching events
+    window.onload = function() {
+      hcaptcha.on('success', function() {
+        giftBtn.style.display = "inline-block";
+      });
+    };
 
-  giftBtn.onclick = () => {
-    const gifts = ["🚀 Rocket", "🎡 Wheel", "🎁 Gift Box"];
-    const roll = Math.random();
-    let sats = 0;
+    giftBtn.onclick = () => {
+      const gifts = ["🚀 Rocket", "🎡 Wheel", "🎁 Gift Box"];
+      const roll = Math.random();
+      let sats = 0;
 
-    if (roll < 0.70) {
-      sats = Math.floor(Math.random() * 10) + 1;
-    } else if (roll < 0.90) {
-      sats = Math.floor(Math.random() * 15) + 11;
-    } else if (roll < 0.99) {
-      sats = Math.floor(Math.random() * 15) + 26;
-    } else if (roll < 0.999) {
-      sats = Math.floor(Math.random() * 9) + 41;
-    } else {
-      sats = 50;
-    }
+      if (roll < 0.70) {
+        sats = Math.floor(Math.random() * 10) + 1;
+      } else if (roll < 0.90) {
+        sats = Math.floor(Math.random() * 15) + 11;
+      } else if (roll < 0.99) {
+        sats = Math.floor(Math.random() * 15) + 26;
+      } else if (roll < 0.999) {
+        sats = Math.floor(Math.random() * 9) + 41;
+      } else {
+        sats = 50;
+      }
 
-    const gift = gifts[Math.floor(Math.random() * gifts.length)];
-    giftResult.textContent = `You opened a ${gift} and received ${sats} sats from MOON! 🌕`;
-  };
-</script>
-
-
-
+      const gift = gifts[Math.floor(Math.random() * gifts.length)];
+      giftResult.textContent = `You opened a ${gift} and received ${sats} sats from MOON! 🌕`;
+    };
+  </script>
 
 </body>
 </html>
