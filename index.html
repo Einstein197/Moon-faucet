@@ -101,22 +101,30 @@
 
     <input type="text" placeholder="cat@discoverlightning.org" id="linkInput" />
 
-    <div class="h-captcha" data-sitekey="a7725132-7912-4624-a0fe-e614b40c1a7e"></div>
+    <!-- hCaptcha container -->
+    <div id="captcha"></div>
 
     <button id="giftBtn" style="display:none;">Open Gift 🎁</button>
     <div class="gift" id="giftResult"></div>
   </div>
 
-  <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+  <!-- Load hCaptcha with onload callback -->
+  <script src="https://js.hcaptcha.com/1/api.js?onload=hcaptchaOnLoad" async defer></script>
 
   <script>
     const giftBtn = document.getElementById("giftBtn");
     const giftResult = document.getElementById("giftResult");
 
-    // Ensure hCaptcha is fully loaded before attaching events
-    window.onload = function() {
-      hcaptcha.on('success', function() {
-        giftBtn.style.display = "inline-block";
+    // Called when captcha is solved
+    function onCaptchaSuccess() {
+      giftBtn.style.display = "inline-block";
+    }
+
+    // Called when hCaptcha script finishes loading
+    window.hcaptchaOnLoad = function () {
+      hcaptcha.render("captcha", {
+        sitekey: "a7725132-7912-4624-a0fe-e614b40c1a7e",
+        callback: onCaptchaSuccess
       });
     };
 
