@@ -141,33 +141,33 @@
       if (roll < 0.70) {
         // 70% chance → 1–10 sats
         sats = Math.floor(Math.random() * 10) + 1;
-        tier = "Common";
+        tier = "a Common";
 
       } else if (roll < 0.90) {
         // 20% chance → 11–25 sats
         sats = Math.floor(Math.random() * 15) + 11;
-        tier = "Uncommon";
+        tier = "an Uncommon";
 
       } else if (roll < 0.97) {
         // 7% chance → 26–40 sats
         sats = Math.floor(Math.random() * 15) + 26;
-        tier = "Rare";
+        tier = "a Rare";
 
       } else if (roll < 0.995) {
         // 0.5% chance → 41–49 sats
         sats = Math.floor(Math.random() * 9) + 41;
-        tier = "Epic";
+        tier = "an Epic";
 
       } else {
         // 0.05% chance → 50 sats
         sats = 50;
-        tier = "Legendary Jackpot (50 sats!)";
+        tier = "a Legendary Jackpot";
       }
 
       const gift = gifts[Math.floor(Math.random() * gifts.length)];
 
       giftResult.textContent =
-        `You opened a ${tier} ${gift} and received ${sats} sats from MOON! 🌕`;
+        `You opened ${tier} ${gift} and received ${sats} sats from MOON! 🌕`;
     };
   </script>
 
