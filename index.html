@@ -131,35 +131,62 @@
       });
     };
 
-    giftBtn.onclick = () => {
+    giftBtn.onclick = async () => {
       const gifts = ["🚀 Rocket", "🎡 Wheel", "🎁 Gift Box"];
+
+      // 1. Get address
+      const address = document.getElementById("linkInput").value.trim();
+
+      // 2. Check if empty
+      if (!address) {
+        giftResult.textContent = "⚠️ Please enter a Lightning address before claiming.";
+        return;
+      }
+
+      // 3. Check format
+      if (!address.includes("@")) {
+        giftResult.textContent = "⚠️ Invalid Lightning address format.";
+        return;
+      }
+
+      const [name, domain] = address.split("@");
+
+      // 4. Check if Lightning address exists
+      try {
+        const url = `https://${domain}/.well-known/lnurlp/${name}`;
+        const res = await fetch(url);
+
+        if (!res.ok) {
+          giftResult.textContent = "⚠️ Lightning address not found. Please check spelling.";
+          return;
+        }
+      } catch (err) {
+        giftResult.textContent = "⚠️ Could not verify Lightning address.";
+        return;
+      }
+
+      // 5. If valid → roll reward
       const roll = Math.random();
       let sats = 0;
       let tier = ""; // 👈 store the tier name
 
-      // Roll is a random number between 0 and 1
       if (roll < 0.70) {
-        // 70% chance → 1–10 sats
         sats = Math.floor(Math.random() * 10) + 1;
         tier = "a Common";
 
       } else if (roll < 0.90) {
-        // 20% chance → 11–25 sats
         sats = Math.floor(Math.random() * 15) + 11;
         tier = "an Uncommon";
 
       } else if (roll < 0.97) {
-        // 7% chance → 26–40 sats
         sats = Math.floor(Math.random() * 15) + 26;
         tier = "a Rare";
 
       } else if (roll < 0.995) {
-        // 0.5% chance → 41–49 sats
         sats = Math.floor(Math.random() * 9) + 41;
         tier = "an Epic";
 
       } else {
-        // 0.05% chance → 50 sats
         sats = 50;
         tier = "a Legendary Jackpot";
       }
@@ -169,6 +196,7 @@
       giftResult.textContent =
         `You opened ${tier} ${gift} and received ${sats} sats from MOON! 🌕`;
     };
+
   </script>
 
 </body>
