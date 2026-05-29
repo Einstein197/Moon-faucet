@@ -127,17 +127,11 @@
     const giftBtn = document.getElementById("giftBtn");
     const giftResult = document.getElementById("giftResult");
 
-    verifyBtn.onclick = () => {
-      const token = hcaptcha.getResponse();
-
-      if (!token) {
-        alert("Please complete the captcha first");
-        return;
-      }
-
+    // Automatically show gift button when captcha is solved
+    hcaptcha.on('success', function() {
       verifyBtn.textContent = "Captcha Verified ✅";
       giftBtn.style.display = "inline-block";
-    };
+    });
 
     giftBtn.onclick = () => {
       const gifts = ["🚀 Rocket", "🎡 Wheel", "🎁 Gift Box"];
