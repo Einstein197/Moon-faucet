@@ -114,7 +114,6 @@
 
     <!-- Real hCaptcha widget -->
     <div class="h-captcha" data-sitekey="a7725132-7912-4624-a0fe-e614b40c1a7e"></div>
-    <button id="verifyBtn">Verify Captcha</button>
 
     <button id="giftBtn" style="display:none;">Open Gift 🎁</button>
     <div class="gift" id="giftResult"></div>
@@ -122,40 +121,38 @@
 
   <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 
-  <script>
-    const verifyBtn = document.getElementById("verifyBtn");
-    const giftBtn = document.getElementById("giftBtn");
-    const giftResult = document.getElementById("giftResult");
+<script>
+  const verifyBtn = document.getElementById("verifyBtn");
+  const giftBtn = document.getElementById("giftBtn");
+  const giftResult = document.getElementById("giftResult");
 
-    // Automatically show gift button when captcha is solved
-    hcaptcha.on('success', function() {
-      verifyBtn.textContent = "Captcha Verified ✅";
-      giftBtn.style.display = "inline-block";
-    });
+  // Automatically show gift button when captcha is solved
+  hcaptcha.on('success', function() {
+    verifyBtn.textContent = "Captcha Verified ✅";
+    giftBtn.style.display = "inline-block";
+  });
 
-    giftBtn.onclick = () => {
-      const gifts = ["🚀 Rocket", "🎡 Wheel", "🎁 Gift Box"];
+  giftBtn.onclick = () => {
+    const gifts = ["🚀 Rocket", "🎡 Wheel", "🎁 Gift Box"];
+    const roll = Math.random();
+    let sats = 0;
 
-      const roll = Math.random();
-      let sats = 0;
+    if (roll < 0.70) {
+      sats = Math.floor(Math.random() * 10) + 1;
+    } else if (roll < 0.90) {
+      sats = Math.floor(Math.random() * 15) + 11;
+    } else if (roll < 0.99) {
+      sats = Math.floor(Math.random() * 15) + 26;
+    } else if (roll < 0.999) {
+      sats = Math.floor(Math.random() * 9) + 41;
+    } else {
+      sats = 50;
+    }
 
-      if (roll < 0.70) {
-        sats = Math.floor(Math.random() * 10) + 1;        // 1–10 (70%)
-      } else if (roll < 0.90) {
-        sats = Math.floor(Math.random() * 15) + 11;       // 11–25 (20%)
-      } else if (roll < 0.99) {
-        sats = Math.floor(Math.random() * 15) + 26;       // 26–40 (9%)
-      } else if (roll < 0.999) {
-        sats = Math.floor(Math.random() * 9) + 41;        // 41–49 (0.9%)
-      } else {
-        sats = 50;                                        // 50 sats (0.1%)
-      }
+    const gift = gifts[Math.floor(Math.random() * gifts.length)];
+    giftResult.textContent = `You opened a ${gift} and received ${sats} sats from MOON! 🌕`;
+  };
+</script>
 
-
-      const gift = gifts[Math.floor(Math.random() * gifts.length)];
-      giftResult.textContent = `You opened a ${gift} and received ${sats} sats from MOON! 🌕`;
-    };
-
-  </script>
 </body>
 </html>
