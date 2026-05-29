@@ -32,22 +32,37 @@
     #MoonBanner {
       display: block;
       width: 100%;
-      top: 0;
-      left: 0;
-      z-index: 1000;
+      background: #000; /* optional if you want a background behind the image */
+      padding: 0px 10px;  /* adds padding above/below the banner */
+      border-radius: 12px; /* rounds the edges */
+      margin-bottom: 20px; /* gap under the banner */
     }
+
     #MoonBanner img {
       width: 100%;
       height: auto;
       display: block;
+      border-radius: 12px; /* rounds the image too */
     }
+
     /* ADS */
-    #frame{
-      width:100%;
-      display:flex;
-      justify-content:center;
-      margin:20px 0;
+    #frame {
+      width: 100%;
+      margin: auto;
+      position: relative;
+      z-index: 99998;
     }
+
+    #frame iframe {
+      border: 0;
+      padding: 0;
+      width: 70%;
+      height: 50px;
+      overflow: hidden;
+      display: block;
+      margin: auto;
+    }
+
     .container {
       text-align: center;
       max-width: 400px;
@@ -84,10 +99,10 @@
   </a>
   <!-- BEGIN AADS AD UNIT 2439609 -->
 
-<div id="frame" style="width: 100%;margin: auto;position: relative; z-index: 99998;">
-          <iframe data-aa='2439609' src='//acceptable.a-ads.com/2439609/?size=Adaptive'
-                            style='border:0; padding:0; width:70%; height:auto; overflow:hidden;display: block;margin: auto'></iframe>
-        </div>
+<div id="frame">
+  <iframe data-aa="2439609" src="//acceptable.a-ads.com/2439609/?size=Adaptive"></iframe>
+</div>
+
 
 <!-- END AADS AD UNIT 2439609 -->
   <div class="container">
