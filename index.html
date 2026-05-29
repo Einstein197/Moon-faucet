@@ -154,12 +154,19 @@
       // 4. Check if Lightning address exists
       try {
         const url = `https://${domain}/.well-known/lnurlp/${name}`;
-        const res = await fetch(url);
+        const res = await fetch(url, { redirect: "follow" });
 
         if (!res.ok) {
-          giftResult.textContent = "⚠️ Lightning address not found. Please check spelling.";
-          return;
+          throw new Error("Invalid response");
         }
+
+        const data = await res.json();
+
+        // Basic LNURL‑Pay validation
+        if (!data.callback || !data.tag || data.tag !== "payRequest") {
+          throw new Error("Not a valid LNURL‑Pay endpoint");
+        }
+
       } catch (err) {
         giftResult.textContent = "⚠️ Could not verify Lightning address.";
         return;
