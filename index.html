@@ -135,33 +135,40 @@
       const gifts = ["🚀 Rocket", "🎡 Wheel", "🎁 Gift Box"];
       const roll = Math.random();
       let sats = 0;
+      let tier = ""; // 👈 store the tier name
 
       // Roll is a random number between 0 and 1
       if (roll < 0.70) {
         // 70% chance → 1–10 sats
         sats = Math.floor(Math.random() * 10) + 1;
+        tier = "Common Tier (1–10 sats)";
 
       } else if (roll < 0.90) {
         // 20% chance → 11–25 sats
         sats = Math.floor(Math.random() * 15) + 11;
+        tier = "Uncommon Tier (11–25 sats)";
 
       } else if (roll < 0.97) {
-        // OLD: 9% → NEW: 7% chance → 26–40 sats
+        // 7% chance → 26–40 sats
         sats = Math.floor(Math.random() * 15) + 26;
+        tier = "Rare Tier (26–40 sats)";
 
       } else if (roll < 0.995) {
-        // OLD: 0.9% → NEW: 0.5% chance → 41–49 sats
+        // 0.5% chance → 41–49 sats
         sats = Math.floor(Math.random() * 9) + 41;
+        tier = "Epic Tier (41–49 sats)";
 
       } else {
-        // OLD: 0.1% → NEW: 0.05% chance → 50 sats
+        // 0.05% chance → 50 sats
         sats = 50;
+        tier = "Legendary Jackpot (50 sats!)";
       }
 
-
-
       const gift = gifts[Math.floor(Math.random() * gifts.length)];
-      giftResult.textContent = `You opened a ${gift} and received ${sats} sats from MOON! 🌕`;
+
+      giftResult.textContent =
+        `You opened a ${gift} and received ${sats} sats from MOON! 🌕\n` +
+        `🎯 Tier: ${tier}`;
     };
   </script>
 
