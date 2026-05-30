@@ -14,10 +14,10 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start; /* 👈 FIXES THE TOP GAP */
-      min-height: 100vh; /* 👈 allows natural scroll */
+      justify-content: flex-start;
+      min-height: 100vh;
       margin: 0;
-      padding: 0; /* 👈 removes hidden padding */
+      padding: 0;
     }
 
     #MoonBanner {
@@ -25,7 +25,7 @@
       width: 100%;
       background: #000;
       border-radius: 12px;
-      margin-bottom: 0; /* removes bottom gap under banner */
+      margin-bottom: 0;
     }
 
     #MoonBanner img {
@@ -36,8 +36,8 @@
     }
 
     #frame {
-      margin-top: 10px; /* removes top gap above ads */
-      margin-bottom: 10px; /* keeps a small gap below ads */
+      margin-top: 10px;
+      margin-bottom: 10px;
       width: 100%;
       position: relative;
       z-index: 99998;
@@ -90,7 +90,7 @@
     /* Spin animation */
     @keyframes spin {
       0% { transform: rotate(0deg); }
-      100% { transform: rotate(1080deg); } /* 3 full spins */
+      100% { transform: rotate(1080deg); }
     }
 
     /* Shake animation */
@@ -133,29 +133,25 @@
 
     <input type="text" placeholder="cat@discoverlightning.org" id="linkInput" />
 
-    <!-- hCaptcha container -->
     <div id="captcha"></div>
 
     <button id="giftBtn" style="display:none;">Open Gift 🎁</button>
+
     <div id="giftAnimation" style="font-size: 3rem; height: 60px;"></div>
 
     <div class="gift" id="giftResult"></div>
   </div>
 
-  <!-- Load hCaptcha with onload callback -->
   <script src="https://js.hcaptcha.com/1/api.js?onload=hcaptchaOnLoad" async defer></script>
 
   <script>
     const giftBtn = document.getElementById("giftBtn");
     const giftResult = document.getElementById("giftResult");
-    
 
-    // Called when captcha is solved
     function onCaptchaSuccess() {
       giftBtn.style.display = "inline-block";
     }
 
-    // Called when hCaptcha script finishes loading
     window.hcaptchaOnLoad = function () {
       hcaptcha.render("captcha", {
         sitekey: "a7725132-7912-4624-a0fe-e614b40c1a7e",
@@ -167,7 +163,6 @@
       const gifts = ["🚀 Rocket", "🎡 Wheel", "🎁 Gift Box"];
       const giftAnimation = document.getElementById("giftAnimation");
 
-      // 1. Get address
       const address = document.getElementById("linkInput").value.trim();
 
       if (!address) {
@@ -182,7 +177,6 @@
 
       const [name, domain] = address.split("@");
 
-      // 2. Validate Lightning address
       try {
         const verifyUrl = `https://ln-verify.shadowlegendcg.workers.dev?name=${name}&domain=${domain}`;
         const check = await fetch(verifyUrl).then(r => r.json());
@@ -196,21 +190,17 @@
         return;
       }
 
-      // 3. Start animation
       giftResult.textContent = "";
       giftAnimation.innerHTML = "🎡";
       giftAnimation.style.animation = "spin 1.2s ease-out";
 
-      // Wait for spin
       await new Promise(res => setTimeout(res, 1200));
 
-      // 4. Shake gift box
       giftAnimation.innerHTML = "🎁";
       giftAnimation.style.animation = "shake 0.6s";
 
       await new Promise(res => setTimeout(res, 600));
 
-      // 5. Roll reward
       const roll = Math.random();
       let sats = 0;
       let tier = "";
@@ -244,7 +234,6 @@
 
       const gift = gifts[Math.floor(Math.random() * gifts.length)];
 
-      // 6. Reveal reward with fade-in
       giftAnimation.innerHTML = gift;
       giftAnimation.style.animation = "fadeIn 0.5s";
 
@@ -252,41 +241,6 @@
         `<span class="${tierClass}">You opened ${tier} ${gift}</span> and received <b>${sats}</b> sats from MOON! 🌕`;
       giftResult.style.animation = "fadeIn 0.5s";
     };
-
-
-
-      // 5. If valid → roll reward
-      const roll = Math.random();
-      let sats = 0;
-      let tier = ""; // 👈 store the tier name
-
-      if (roll < 0.70) {
-        sats = Math.floor(Math.random() * 10) + 1;
-        tier = "a Common";
-
-      } else if (roll < 0.90) {
-        sats = Math.floor(Math.random() * 15) + 11;
-        tier = "an Uncommon";
-
-      } else if (roll < 0.97) {
-        sats = Math.floor(Math.random() * 15) + 26;
-        tier = "a Rare";
-
-      } else if (roll < 0.995) {
-        sats = Math.floor(Math.random() * 9) + 41;
-        tier = "an Epic";
-
-      } else {
-        sats = 50;
-        tier = "a Legendary Jackpot";
-      }
-
-      const gift = gifts[Math.floor(Math.random() * gifts.length)];
-
-      giftResult.textContent =
-        `You opened ${tier} ${gift} and received ${sats} sats from MOON! 🌕`;
-    };
-
   </script>
 
 </body>
