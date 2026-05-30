@@ -48,43 +48,34 @@
       font-weight: bold;
     }
 
-    /* REAL SPINNING WHEEL */
-    #spinWheelContainer {
+    /* WHEEL CONTAINER */
+    #wheelContainer {
       margin: 20px auto;
-      width: 240px;
-      height: 240px;
+      width: 260px;
+      height: 260px;
       position: relative;
     }
 
-    #spinWheel {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      border: 6px solid #fff;
-      background: conic-gradient(
-        #ffcc00 0deg 36deg,
-        #ff8800 36deg 72deg,
-        #ffcc00 72deg 108deg,
-        #ff8800 108deg 144deg,
-        #ffcc00 144deg 180deg,
-        #ff8800 180deg 216deg,
-        #ffcc00 216deg 252deg,
-        #ff8800 252deg 288deg,
-        #ffcc00 288deg 324deg,
-        #ff8800 324deg 360deg
-      );
-      transition: transform 3s cubic-bezier(.17,.67,.12,1.02);
-      position: relative;
-    }
-
-    #spinWheel::after {
-      content: "▼";
+    /* POINTER */
+    #wheelPointer {
+      content: "";
       position: absolute;
-      top: -32px;
+      top: -25px;
       left: 50%;
       transform: translateX(-50%);
       font-size: 2rem;
       color: #ffcc00;
+      z-index: 10;
+    }
+
+    /* CANVAS WHEEL */
+    #wheelCanvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 6px solid #fff;
+      background: #222;
+      transition: transform 4s cubic-bezier(.17,.67,.12,1.02);
     }
 
     /* Shake animation */
@@ -101,13 +92,6 @@
       from { opacity: 0; transform: scale(0.9); }
       to { opacity: 1; transform: scale(1); }
     }
-
-    /* Tier colors */
-    .common { color: #bfbfbf; }
-    .uncommon { color: #4caf50; }
-    .rare { color: #2196f3; }
-    .epic { color: #9c27b0; }
-    .legendary { color: #ff9800; font-weight: bold; text-shadow: 0 0 10px #ff9800; }
 
   </style>
 </head>
@@ -127,9 +111,10 @@
 
     <button id="giftBtn" style="display:none;">Open Gift 🎁</button>
 
-    <!-- REAL SPINNING WHEEL -->
-    <div id="spinWheelContainer">
-      <div id="spinWheel"></div>
+    <!-- REAL NUMBERED WHEEL -->
+    <div id="wheelContainer">
+      <div id="wheelPointer">▼</div>
+      <canvas id="wheelCanvas" width="260" height="260"></canvas>
     </div>
 
     <div id="giftAnimation" style="font-size: 3rem; height: 60px;"></div>
@@ -141,7 +126,36 @@
   <script>
     const giftBtn = document.getElementById("giftBtn");
     const giftResult = document.getElementById("giftResult");
+    const wheelCanvas = document.getElementById("wheelCanvas");
+    const ctx = wheelCanvas.getContext("2d");
 
+    /* ---------------- DRAW 1–50 WHEEL ---------------- */
+    function drawWheel() {
+      const slices = 50;
+      const angle = (2 * Math.PI) / slices;
+
+      for (let i = 0; i < slices; i++) {
+        ctx.beginPath();
+        ctx.moveTo(130, 130);
+        ctx.arc(130, 130, 130, i * angle, (i + 1) * angle);
+
+        ctx.fillStyle = i % 2 === 0 ? "#ffcc00" : "#ff8800";
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(130, 130);
+        ctx.rotate(i * angle + angle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#000";
+        ctx.font = "bold 14px Arial";
+        ctx.fillText(i + 1, 120, 5);
+        ctx.restore();
+      }
+    }
+
+    drawWheel();
+
+    /* ---------------- CAPTCHA ---------------- */
     function onCaptchaSuccess() {
       giftBtn.style.display = "inline-block";
     }
@@ -153,20 +167,13 @@
       });
     };
 
+    /* ---------------- MAIN CLICK ---------------- */
     giftBtn.onclick = async () => {
-      const gifts = ["🚀 Rocket", "🎡 Wheel", "🎁 Gift Box"];
-      const wheel = document.getElementById("spinWheel");
       const giftAnimation = document.getElementById("giftAnimation");
-
       const address = document.getElementById("linkInput").value.trim();
 
-      if (!address) {
-        giftResult.textContent = "⚠️ Please enter a Lightning address before claiming.";
-        return;
-      }
-
       if (!address.includes("@")) {
-        giftResult.textContent = "⚠️ Invalid Lightning address format.";
+        giftResult.textContent = "⚠️ Invalid Lightning address.";
         return;
       }
 
@@ -184,64 +191,33 @@
         return;
       }
 
-      giftResult.textContent = "";
-      giftAnimation.innerHTML = "";
+      /* ---------------- SPIN THE WHEEL ---------------- */
+      const slices = 50;
+      const sliceAngle = 360 / slices;
 
-      // Roll reward
-      const roll = Math.random();
-      let sats = 0;
-      let tier = "";
-      let tierClass = "";
-      let segment = 0;
+      // Pick a random number 1–50
+      const resultNumber = Math.floor(Math.random() * 50) + 1;
 
-      if (roll < 0.70) {
-        sats = Math.floor(Math.random() * 10) + 1;
-        tier = "a Common";
-        tierClass = "common";
-        segment = 0;
-      } else if (roll < 0.90) {
-        sats = Math.floor(Math.random() * 15) + 11;
-        tier = "an Uncommon";
-        tierClass = "uncommon";
-        segment = 3;
-      } else if (roll < 0.97) {
-        sats = Math.floor(Math.random() * 15) + 26;
-        tier = "a Rare";
-        tierClass = "rare";
-        segment = 6;
-      } else if (roll < 0.995) {
-        sats = Math.floor(Math.random() * 9) + 41;
-        tier = "an Epic";
-        tierClass = "epic";
-        segment = 8;
-      } else {
-        sats = 50;
-        tier = "a Legendary Jackpot";
-        tierClass = "legendary";
-        segment = 9;
-      }
+      // Calculate final angle
+      const extraSpins = 5 * 360;
+      const stopAngle = extraSpins + (360 - (resultNumber - 1) * sliceAngle);
 
-      // Spin wheel
-      const extraSpins = Math.floor(Math.random() * 3) + 3;
-      const stopAngle = (360 - segment * 36) + (extraSpins * 360);
+      wheelCanvas.style.transform = `rotate(${stopAngle}deg)`;
 
-      wheel.style.transform = `rotate(${stopAngle}deg)`;
+      await new Promise(res => setTimeout(res, 4000));
 
-      await new Promise(res => setTimeout(res, 3000));
-
-      // Gift animation
+      /* ---------------- GIFT ANIMATION ---------------- */
       giftAnimation.innerHTML = "🎁";
       giftAnimation.style.animation = "shake 0.6s";
 
       await new Promise(res => setTimeout(res, 600));
 
-      const gift = gifts[Math.floor(Math.random() * gifts.length)];
-
-      giftAnimation.innerHTML = gift;
+      giftAnimation.innerHTML = "🎉";
       giftAnimation.style.animation = "fadeIn 0.5s";
 
       giftResult.innerHTML =
-        `<span class="${tierClass}">You opened ${tier} ${gift}</span> and received <b>${sats}</b> sats from MOON! 🌕`;
+        `You spun the wheel and landed on <b>${resultNumber}</b>!  
+         You received <b>${resultNumber}</b> sats from MOON! 🌕`;
       giftResult.style.animation = "fadeIn 0.5s";
     };
   </script>
