@@ -48,7 +48,6 @@
       font-weight: bold;
     }
 
-    /* WHEEL CONTAINER */
     #wheelContainer {
       margin: 20px auto;
       width: 260px;
@@ -56,9 +55,7 @@
       position: relative;
     }
 
-    /* POINTER */
     #wheelPointer {
-      content: "";
       position: absolute;
       top: -25px;
       left: 50%;
@@ -68,7 +65,6 @@
       z-index: 10;
     }
 
-    /* CANVAS WHEEL */
     #wheelCanvas {
       width: 100%;
       height: 100%;
@@ -78,7 +74,6 @@
       transition: transform 4s cubic-bezier(.17,.67,.12,1.02);
     }
 
-    /* Shake animation */
     @keyframes shake {
       0%,100% { transform: translateX(0); }
       20% { transform: translateX(-5px); }
@@ -87,12 +82,10 @@
       80% { transform: translateX(5px); }
     }
 
-    /* Fade-in */
     @keyframes fadeIn {
       from { opacity: 0; transform: scale(0.9); }
       to { opacity: 1; transform: scale(1); }
     }
-
   </style>
 </head>
 <body>
@@ -111,7 +104,6 @@
 
     <button id="giftBtn" style="display:none;">Open Gift 🎁</button>
 
-    <!-- REAL NUMBERED WHEEL -->
     <div id="wheelContainer">
       <div id="wheelPointer">▼</div>
       <canvas id="wheelCanvas" width="260" height="260"></canvas>
@@ -129,21 +121,22 @@
     const wheelCanvas = document.getElementById("wheelCanvas");
     const ctx = wheelCanvas.getContext("2d");
 
-    /* ---------------- DRAW 1–50 WHEEL ---------------- */
+    // Draw 1–50 wheel
     function drawWheel() {
       const slices = 50;
       const angle = (2 * Math.PI) / slices;
+      ctx.save();
+      ctx.translate(130, 130);
+      ctx.rotate(-angle / 2); // align slice centers with pointer
 
       for (let i = 0; i < slices; i++) {
         ctx.beginPath();
-        ctx.moveTo(130, 130);
-        ctx.arc(130, 130, 130, i * angle, (i + 1) * angle);
-
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, 130, i * angle, (i + 1) * angle);
         ctx.fillStyle = i % 2 === 0 ? "#ffcc00" : "#ff8800";
         ctx.fill();
 
         ctx.save();
-        ctx.translate(130, 130);
         ctx.rotate(i * angle + angle / 2);
         ctx.textAlign = "right";
         ctx.fillStyle = "#000";
@@ -151,11 +144,11 @@
         ctx.fillText(i + 1, 120, 5);
         ctx.restore();
       }
+      ctx.restore();
     }
 
     drawWheel();
 
-    /* ---------------- CAPTCHA ---------------- */
     function onCaptchaSuccess() {
       giftBtn.style.display = "inline-block";
     }
@@ -167,7 +160,6 @@
       });
     };
 
-    /* ---------------- MAIN CLICK ---------------- */
     giftBtn.onclick = async () => {
       const giftAnimation = document.getElementById("giftAnimation");
       const address = document.getElementById("linkInput").value.trim();
@@ -191,22 +183,16 @@
         return;
       }
 
-      /* ---------------- SPIN THE WHEEL ---------------- */
       const slices = 50;
       const sliceAngle = 360 / slices;
-
-      // Pick a random number 1–50
       const resultNumber = Math.floor(Math.random() * 50) + 1;
-
-      // Calculate final angle
       const extraSpins = 5 * 360;
-      const stopAngle = extraSpins + (360 - (resultNumber - 1) * sliceAngle);
+      const stopAngle = extraSpins + (360 - (resultNumber - 1) * sliceAngle) - (sliceAngle / 2);
 
       wheelCanvas.style.transform = `rotate(${stopAngle}deg)`;
 
       await new Promise(res => setTimeout(res, 4000));
 
-      /* ---------------- GIFT ANIMATION ---------------- */
       giftAnimation.innerHTML = "🎁";
       giftAnimation.style.animation = "shake 0.6s";
 
