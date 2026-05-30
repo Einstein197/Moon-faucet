@@ -86,6 +86,35 @@
       margin-top: 20px;
       font-size: 1.2rem;
     }
+
+    /* Spin animation */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(1080deg); } /* 3 full spins */
+    }
+
+    /* Shake animation */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-5px); }
+      40% { transform: translateX(5px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+    }
+
+    /* Fade-in reward */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Tier colors */
+    .common { color: #bfbfbf; }
+    .uncommon { color: #4caf50; }
+    .rare { color: #2196f3; }
+    .epic { color: #9c27b0; }
+    .legendary { color: #ff9800; font-weight: bold; text-shadow: 0 0 10px #ff9800; }
+
   </style>
 </head>
 <body>
@@ -108,6 +137,8 @@
     <div id="captcha"></div>
 
     <button id="giftBtn" style="display:none;">Open Gift 🎁</button>
+    <div id="giftAnimation" style="font-size: 3rem; height: 60px;"></div>
+
     <div class="gift" id="giftResult"></div>
   </div>
 
@@ -117,6 +148,7 @@
   <script>
     const giftBtn = document.getElementById("giftBtn");
     const giftResult = document.getElementById("giftResult");
+    
 
     // Called when captcha is solved
     function onCaptchaSuccess() {
@@ -133,17 +165,16 @@
 
     giftBtn.onclick = async () => {
       const gifts = ["🚀 Rocket", "🎡 Wheel", "🎁 Gift Box"];
+      const giftAnimation = document.getElementById("giftAnimation");
 
       // 1. Get address
       const address = document.getElementById("linkInput").value.trim();
 
-      // 2. Check if empty
       if (!address) {
         giftResult.textContent = "⚠️ Please enter a Lightning address before claiming.";
         return;
       }
 
-      // 3. Check format
       if (!address.includes("@")) {
         giftResult.textContent = "⚠️ Invalid Lightning address format.";
         return;
@@ -151,7 +182,7 @@
 
       const [name, domain] = address.split("@");
 
-      // 4. Check if Lightning address exists (via Worker)
+      // 2. Validate Lightning address
       try {
         const verifyUrl = `https://ln-verify.shadowlegendcg.workers.dev?name=${name}&domain=${domain}`;
         const check = await fetch(verifyUrl).then(r => r.json());
@@ -164,6 +195,64 @@
         giftResult.textContent = "⚠️ Could not verify Lightning address.";
         return;
       }
+
+      // 3. Start animation
+      giftResult.textContent = "";
+      giftAnimation.innerHTML = "🎡";
+      giftAnimation.style.animation = "spin 1.2s ease-out";
+
+      // Wait for spin
+      await new Promise(res => setTimeout(res, 1200));
+
+      // 4. Shake gift box
+      giftAnimation.innerHTML = "🎁";
+      giftAnimation.style.animation = "shake 0.6s";
+
+      await new Promise(res => setTimeout(res, 600));
+
+      // 5. Roll reward
+      const roll = Math.random();
+      let sats = 0;
+      let tier = "";
+      let tierClass = "";
+
+      if (roll < 0.70) {
+        sats = Math.floor(Math.random() * 10) + 1;
+        tier = "a Common";
+        tierClass = "common";
+
+      } else if (roll < 0.90) {
+        sats = Math.floor(Math.random() * 15) + 11;
+        tier = "an Uncommon";
+        tierClass = "uncommon";
+
+      } else if (roll < 0.97) {
+        sats = Math.floor(Math.random() * 15) + 26;
+        tier = "a Rare";
+        tierClass = "rare";
+
+      } else if (roll < 0.995) {
+        sats = Math.floor(Math.random() * 9) + 41;
+        tier = "an Epic";
+        tierClass = "epic";
+
+      } else {
+        sats = 50;
+        tier = "a Legendary Jackpot";
+        tierClass = "legendary";
+      }
+
+      const gift = gifts[Math.floor(Math.random() * gifts.length)];
+
+      // 6. Reveal reward with fade-in
+      giftAnimation.innerHTML = gift;
+      giftAnimation.style.animation = "fadeIn 0.5s";
+
+      giftResult.innerHTML =
+        `<span class="${tierClass}">You opened ${tier} ${gift}</span> and received <b>${sats}</b> sats from MOON! 🌕`;
+      giftResult.style.animation = "fadeIn 0.5s";
+    };
+
 
 
       // 5. If valid → roll reward
