@@ -72,6 +72,7 @@
       border: 6px solid #fff;
       background: #222;
       transition: transform 4s cubic-bezier(.17,.67,.12,1.02);
+      transform-origin: 50% 50%;
     }
 
     @keyframes shake {
@@ -121,29 +122,38 @@
     const wheelCanvas = document.getElementById("wheelCanvas");
     const ctx = wheelCanvas.getContext("2d");
 
-    // Draw 1–50 wheel
+    // Draw 1–50 wheel, slice 1 centered at top
     function drawWheel() {
       const slices = 50;
       const angle = (2 * Math.PI) / slices;
+      const cx = 130;
+      const cy = 130;
+      const r = 130;
+
+      ctx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
       ctx.save();
-      ctx.translate(130, 130);
-      ctx.rotate(-angle / 2); // align slice centers with pointer
+      ctx.translate(cx, cy);
 
       for (let i = 0; i < slices; i++) {
+        const start = i * angle - Math.PI / 2;
+        const end = (i + 1) * angle - Math.PI / 2;
+
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.arc(0, 0, 130, i * angle, (i + 1) * angle);
+        ctx.arc(0, 0, r, start, end);
         ctx.fillStyle = i % 2 === 0 ? "#ffcc00" : "#ff8800";
         ctx.fill();
 
+        const mid = (start + end) / 2;
         ctx.save();
-        ctx.rotate(i * angle + angle / 2);
+        ctx.rotate(mid);
         ctx.textAlign = "right";
         ctx.fillStyle = "#000";
         ctx.font = "bold 14px Arial";
-        ctx.fillText(i + 1, 120, 5);
+        ctx.fillText(i + 1, r - 10, 5);
         ctx.restore();
       }
+
       ctx.restore();
     }
 
@@ -185,9 +195,16 @@
 
       const slices = 50;
       const sliceAngle = 360 / slices;
+
+      // Pick a random number 1–50
       const resultNumber = Math.floor(Math.random() * 50) + 1;
+
+      // Extra spins for drama
       const extraSpins = 5 * 360;
-      const stopAngle = extraSpins + (360 - (resultNumber - 1) * sliceAngle) - (sliceAngle / 2);
+
+      // Slice 1 is centered at top when rotation = 0.
+      // To bring slice N to top, rotate wheel by -(N-1)*sliceAngle.
+      const stopAngle = extraSpins - (resultNumber - 1) * sliceAngle;
 
       wheelCanvas.style.transform = `rotate(${stopAngle}deg)`;
 
