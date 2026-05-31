@@ -236,8 +236,11 @@
 
       const finalRotation = stopAngle % 360;
       const normalized = (360 - (finalRotation + 360) % 360) % 360;
-      const winningIndex = Math.floor(normalized / SLICE_ANGLE_DEG) % SLICES;
+
+      // add half a slice to align with the center of the slice under the pointer
+      const winningIndex = Math.floor((normalized + SLICE_ANGLE_DEG / 2) / SLICE_ANGLE_DEG) % SLICES;
       const resultNumber = winningIndex + 1;
+
 
       giftAnimation.innerHTML = "";
       giftAnimation.style.animation = "";
