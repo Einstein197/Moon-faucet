@@ -87,10 +87,10 @@
 
     #wheelPointer {
       position: absolute;
-      top: -30px;
+      top: -35px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 2.4rem;
+      font-size: 3rem;
       color: #ffcc00;
       z-index: 10;
     }
@@ -138,7 +138,7 @@
     <!-- WHEEL ON RIGHT SIDE -->
     <div id="wheelContainer">
       <div id="wheelPointer">▼</div>
-      <canvas id="wheelCanvas" width="340" height="340"></canvas>
+      <canvas id="wheelCanvas" width="400" height="400"></canvas>
     </div>
   </div>
 
@@ -153,9 +153,9 @@
 
     const SLICES = 50;
     const SLICE_ANGLE_DEG = 360 / SLICES;
-    const CENTER_X = 170;
-    const CENTER_Y = 170;
-    const RADIUS = 170;
+    const CENTER_X = 200;
+    const CENTER_Y = 200;
+    const RADIUS = 200;
 
     function drawWheel() {
       const angle = (2 * Math.PI) / SLICES;
@@ -178,8 +178,8 @@
         ctx.rotate(mid);
         ctx.textAlign = "right";
         ctx.fillStyle = "#000";
-        ctx.font = "bold 16px Arial";
-        ctx.fillText(i + 1, RADIUS - 15, 5);
+        ctx.font = "bold 18px Arial";
+        ctx.fillText(i + 1, RADIUS - 20, 5);
         ctx.restore();
       }
 
@@ -237,10 +237,11 @@
       const finalRotation = stopAngle % 360;
       const normalized = (360 - (finalRotation + 360) % 360) % 360;
 
-      // add half a slice to align with the center of the slice under the pointer
-      const winningIndex = Math.floor((normalized + SLICE_ANGLE_DEG / 2) / SLICE_ANGLE_DEG) % SLICES;
-      const resultNumber = winningIndex + 1;
+      // FIX: align slice center with pointer
+      const winningIndex =
+        Math.floor((normalized + SLICE_ANGLE_DEG / 2) / SLICE_ANGLE_DEG) % SLICES;
 
+      const resultNumber = winningIndex + 1;
 
       giftAnimation.innerHTML = "";
       giftAnimation.style.animation = "";
