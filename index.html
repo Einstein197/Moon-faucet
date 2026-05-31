@@ -261,7 +261,7 @@
     };
 
     centerSpinBtn.onclick = async () => {
-      const address = (url.searchParams.get("address") || "").toLowerCase().trim();
+      const address = document.getElementById("linkInput").value.trim();
 
       if (!address.includes("@")) {
         giftResult.textContent = "⚠️ Invalid Lightning address.";
