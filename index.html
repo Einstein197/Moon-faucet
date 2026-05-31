@@ -269,7 +269,8 @@
 
       await new Promise(res => setTimeout(res, 10000));
 
-      const resultNumber = winningIndex + 1;
+      const resultNumber = ((SLICES - winningIndex - 1 + SLICES) % SLICES) + 1;
+
 
       giftAnimation.innerHTML = "";
       giftAnimation.style.animation = "";
