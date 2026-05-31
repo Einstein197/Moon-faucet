@@ -255,7 +255,9 @@
       // To land winningIndex under the pointer, rotate wheel so that
       // its center angle moves to the top.
       const extraSpins = 5 * 360;
-      const stopAngle = extraSpins - winningIndex * SLICE_ANGLE_DEG;
+      const randomOffset = Math.floor(Math.random() * 360); 
+      const stopAngle = extraSpins + randomOffset - winningIndex * SLICE_ANGLE_DEG;
+
 
       wheelCanvas.style.transform = `rotate(${stopAngle}deg)`;
 
