@@ -80,8 +80,8 @@
     /* WHEEL HIDDEN UNTIL CAPTCHA */
     #wheelContainer {
       display: none;
-      width: 450px;
-      height: 450px;
+      width: 400px;
+      height: 400px;
       position: relative;
     }
 
@@ -139,12 +139,12 @@
     <div id="wheelContainer">
       <div id="wheelPointer">▼</div>
       <div style="position: relative;">
-        <canvas id="wheelCanvas" width="450" height="450"></canvas>
-        <canvas id="textCanvas" width="450" height="450"
+        <canvas id="wheelCanvas" width="400" height="400"></canvas>
+        <canvas id="textCanvas" width="400" height="400"
           style="position:absolute; top:0; left:0; pointer-events:none;"></canvas>
       </div>
     </div>
-
+  </div>
 
   <script src="https://js.hcaptcha.com/1/api.js?onload=hcaptchaOnLoad" async defer></script>
 
@@ -187,32 +187,29 @@
         ctx.restore();
       }
 
+      ctx.restore();
+
+      // Draw MOON text on separate canvas (always upright)
       const textCanvas = document.getElementById("textCanvas");
       const textCtx = textCanvas.getContext("2d");
-
-      function drawMoonText() {
-        textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
-        textCtx.save();
-        textCtx.translate(CENTER_X, CENTER_Y);
-        textCtx.textAlign = "center";
-        textCtx.textBaseline = "middle";
-        textCtx.fillStyle = "#fff";
-        textCtx.font = "bold 48px Arial";
-        textCtx.shadowColor = "#ffcc00";
-        textCtx.shadowBlur = 20;
-        textCtx.fillText("MOON", 0, 0);
-        textCtx.restore();
-      }
-
-      drawMoonText();
-
-
-      ctx.restore();
+      textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
+      textCtx.save();
+      textCtx.translate(textCanvas.width / 2, textCanvas.height / 2);
+      textCtx.textAlign = "center";
+      textCtx.textBaseline = "middle";
+      textCtx.fillStyle = "#fff";
+      textCtx.font = "bold 48px Arial";
+      textCtx.shadowColor = "#ffcc00";
+      textCtx.shadowBlur = 20;
+      textCtx.fillText("MOON", 0, 0);
+      textCtx.restore();
     }
 
     drawWheel();
 
     function onCaptchaSuccess() {
+      // Hide captcha after success
+      document.getElementById("captcha").style.display = "none";
       giftBtn.style.display = "inline-block";
       wheelContainer.style.display = "block"; // SHOW WHEEL
     }
@@ -258,16 +255,15 @@
 
       await new Promise(res => setTimeout(res, 10000));
 
-      const finalRotation = stopAngle % 360;
+            const finalRotation = stopAngle % 360;
       const normalized = (360 - (finalRotation + 360) % 360) % 360;
 
+      // Correct slice detection (now matches pointer perfectly)
       const rawIndex =
         Math.round((normalized + SLICE_ANGLE_DEG / 2) / SLICE_ANGLE_DEG);
 
       const winningIndex = (rawIndex - 1 + SLICES) % SLICES;
       const resultNumber = winningIndex + 1;
-
-
 
       giftAnimation.innerHTML = "";
       giftAnimation.style.animation = "";
