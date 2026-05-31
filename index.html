@@ -183,6 +183,18 @@
         ctx.restore();
       }
 
+      // Draw "MOON" text in the center, always upright
+      ctx.save();
+      ctx.rotate(0); // ensure upright orientation
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 48px Arial";
+      ctx.shadowColor = "#ffcc00";
+      ctx.shadowBlur = 20;
+      ctx.fillText("MOON", 0, 0);
+      ctx.restore();
+
       ctx.restore();
     }
 
