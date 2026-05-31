@@ -181,9 +181,13 @@
         ctx.textAlign = "right";
         ctx.fillStyle = "#000";
         ctx.font = "bold 18px Arial";
-        ctx.fillText(i + 1, RADIUS - 20, 5);
+
+        const labelNumber = ((SLICES - i) % SLICES) + 1;
+        ctx.fillText(labelNumber, RADIUS - 20, 5);
+
         ctx.restore();
       }
+
 
       ctx.restore();
 
