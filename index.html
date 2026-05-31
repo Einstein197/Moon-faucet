@@ -283,14 +283,15 @@
       /* Convert clockwise label → slice index */
       const winningIndex = (SLICES - resultNumber) % SLICES;
 
-      /* Random offset so it never snaps */
-      const randomOffset = Math.floor(Math.random() * 360);
+      /* Randomize number of FULL spins (keeps alignment correct) */
+      const fullSpins = 5 + Math.floor(Math.random() * 4); // 5–8 full spins
+      const extraSpins = fullSpins * 360;
 
       /* Spin CCW to land correct slice under pointer */
-      const extraSpins = 5 * 360;
-      const stopAngle = extraSpins + randomOffset - winningIndex * SLICE_ANGLE_DEG;
+      const stopAngle = extraSpins - winningIndex * SLICE_ANGLE_DEG;
 
       wheelCanvas.style.transform = `rotate(${stopAngle}deg)`;
+
 
       /* Match 15s spin */
       await new Promise(res => setTimeout(res, 15000));
