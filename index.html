@@ -137,6 +137,33 @@
       from { opacity: 0; transform: scale(0.9); }
       to { opacity: 1; transform: scale(1); }
     }
+
+    @media (max-width: 768px) {
+      html, body {
+        overflow: auto;   /* allow scrolling */
+        height: auto;     /* let content expand */
+        position: static; /* remove fixed lock */
+        touch-action: auto;
+      }
+
+      #mainWrapper {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+
+      #wheelContainer {
+        width: 90vw;      /* responsive wheel */
+        height: 90vw;
+      }
+
+      #centerSpinBtn {
+        width: 120px;
+        height: 120px;
+        font-size: 28px;
+      }
+    }
+
   </style>
 </head>
 <body>
