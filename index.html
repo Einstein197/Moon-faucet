@@ -287,8 +287,10 @@
       centerSpinBtn.style.opacity = "0.7";
 
       try {
-        const spinCheck = await fetch("https://spin-check.shadowlegendcg.workers.dev/spin-check")
-          .then(r => r.json());
+        const spinCheck = await fetch(
+          `https://spin-check.shadowlegendcg.workers.dev/spin-check?address=${address}`
+        ).then(r => r.json());
+
 
         if (!spinCheck.allowed) {
           giftResult.textContent = "⚠️ You already spun today. Come back tomorrow!";
