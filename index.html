@@ -138,9 +138,13 @@
     <!-- WHEEL ON RIGHT SIDE -->
     <div id="wheelContainer">
       <div id="wheelPointer">▼</div>
-      <canvas id="wheelCanvas" width="400" height="400"></canvas>
+      <div style="position: relative;">
+        <canvas id="wheelCanvas" width="400" height="400"></canvas>
+        <canvas id="textCanvas" width="400" height="400"
+          style="position:absolute; top:0; left:0; pointer-events:none;"></canvas>
+      </div>
     </div>
-  </div>
+
 
   <script src="https://js.hcaptcha.com/1/api.js?onload=hcaptchaOnLoad" async defer></script>
 
@@ -183,17 +187,25 @@
         ctx.restore();
       }
 
-      // Draw "MOON" text in the center, always upright
-      ctx.save();
-      ctx.rotate(0); // ensure upright orientation
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 48px Arial";
-      ctx.shadowColor = "#ffcc00";
-      ctx.shadowBlur = 20;
-      ctx.fillText("MOON", 0, 0);
-      ctx.restore();
+      const textCanvas = document.getElementById("textCanvas");
+      const textCtx = textCanvas.getContext("2d");
+
+      function drawMoonText() {
+        textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
+        textCtx.save();
+        textCtx.translate(CENTER_X, CENTER_Y);
+        textCtx.textAlign = "center";
+        textCtx.textBaseline = "middle";
+        textCtx.fillStyle = "#fff";
+        textCtx.font = "bold 48px Arial";
+        textCtx.shadowColor = "#ffcc00";
+        textCtx.shadowBlur = 20;
+        textCtx.fillText("MOON", 0, 0);
+        textCtx.restore();
+      }
+
+      drawMoonText();
+
 
       ctx.restore();
     }
@@ -253,7 +265,7 @@
       const winningIndex =
         Math.round((normalized + SLICE_ANGLE_DEG / 2) / SLICE_ANGLE_DEG) % SLICES;
 
-      const resultNumber = winningIndex;
+      const resultNumber = winningIndex + 1;
 
 
       giftAnimation.innerHTML = "";
