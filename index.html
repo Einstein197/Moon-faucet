@@ -249,21 +249,21 @@
 
       const targetIndex = Math.floor(Math.random() * SLICES);
       const extraSpins = 5 * 360;
-      const stopAngle = extraSpins - targetIndex * SLICE_ANGLE_DEG;
+      const stopAngle = extraSpins + targetIndex * SLICE_ANGLE_DEG;
 
       wheelCanvas.style.transform = `rotate(${stopAngle}deg)`;
 
       await new Promise(res => setTimeout(res, 10000));
 
-            const finalRotation = stopAngle % 360;
-      const normalized = (360 - (finalRotation + 360) % 360) % 360;
+      const finalRotation = ((stopAngle % 360) + 360) % 360;
 
-      // Correct slice detection (now matches pointer perfectly)
-      const rawIndex =
-        Math.round((normalized + SLICE_ANGLE_DEG / 2) / SLICE_ANGLE_DEG);
+      // Pointer is at -90°, so convert rotation to slice index
+      const pointerAngle = (360 - finalRotation + 270) % 360;
 
-      const winningIndex = (rawIndex - 1 + SLICES) % SLICES;
+      // Determine slice
+      const winningIndex = Math.floor(pointerAngle / SLICE_ANGLE_DEG) % SLICES;
       const resultNumber = winningIndex + 1;
+
 
       giftAnimation.innerHTML = "";
       giftAnimation.style.animation = "";
