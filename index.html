@@ -75,6 +75,25 @@
       transform-origin: 50% 50%;
     }
 
+    #frame {
+      margin-top: 10px;
+      margin-bottom: 10px;
+      width: 100%;
+      position: relative;
+      z-index: 99998;
+    }
+
+    #frame iframe {
+      border: 0;
+      padding: 0;
+      width: 70%;
+      height: 60px;
+      border-radius: 12px;
+      overflow: hidden;
+      display: block;
+      margin: auto;
+    }
+
     @keyframes shake {
       0%,100% { transform: translateX(0); }
       20% { transform: translateX(-5px); }
@@ -95,6 +114,10 @@
     <img src="banner.png" alt="Moon Faucet Banner">
   </a>
 
+  <div id="frame">
+    <iframe data-aa="2436395" src="//acceptable.a-ads.com/2436395/?size=Adaptive"></iframe>
+  </div>
+
   <div class="container">
     <h1>🚀 MOON Faucet</h1>
     <p>Enter your Lightning address, complete captcha, and claim your sats!</p>
@@ -103,7 +126,7 @@
 
     <div id="captcha"></div>
 
-    <button id="giftBtn" style="display:none;">Open Gift 🎁</button>
+    <button id="giftBtn" style="display:none;">Spin Wheel</button>
 
     <div id="wheelContainer">
       <div id="wheelPointer">▼</div>
