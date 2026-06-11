@@ -245,7 +245,7 @@
   </div>
 </div>
 
-<footer>🎁 Daily limit • verifiable spins • fair weighted odds</footer>
+<footer>🎁 Daily limit (IP + Address) • verifiable spins • fair weighted odds</footer>
 
 <script>
   // DOM elements
@@ -265,8 +265,26 @@
   let verifyTimeout = null;
 
   // Cloudflare Worker endpoints
-  const WORKER_URL = "https://spin-check.shadowlegendcg.workers.dev";
+  const SPIN_CHECK_URL = "https://spin-check.shadowlegendcg.workers.dev/spin-check";
   const VERIFY_URL = "https://ln-verify.shadowlegendcg.workers.dev";
+
+  // Weighted prize generation (will be done client-side BUT with server limit enforcement)
+  // Since your worker only checks limits, we generate prize client-side
+  // For production, move prize generation to worker
+  function generatePrize() {
+    const rand = Math.random();
+    if (rand < 0.70) {
+      return Math.floor(Math.random() * 10) + 1;      // 1-10 (70%)
+    } else if (rand < 0.90) {
+      return Math.floor(Math.random() * 15) + 11;     // 11-25 (20%)
+    } else if (rand < 0.98) {
+      return Math.floor(Math.random() * 15) + 26;     // 26-40 (8%)
+    } else if (rand < 0.998) {
+      return Math.floor(Math.random() * 9) + 41;      // 41-49 (1.8%)
+    } else {
+      return 50;                                      // 50 (0.2%)
+    }
+  }
 
   // Wheel config
   const SLICES = 50;
@@ -357,7 +375,7 @@
       
       if (data && data.valid === true) {
         isAddressVerified = true;
-        currentVerifiedAddress = address;
+        currentVerifiedAddress = address.toLowerCase();
         statusMsgDiv.innerHTML = "✅ Lightning address verified!";
         updateWheelVisibility();
       } else {
@@ -436,33 +454,7 @@
     }
   };
 
-  // SECURE SPIN with Cloudflare Worker & KV storage for daily limit
-  async function performSecureSpin(address, captchaToken) {
-    if (!captchaToken || captchaToken.length < 5) {
-      return { success: false, message: "Captcha validation failed" };
-    }
-    
-    try {
-      // Call the Cloudflare Worker that checks KV for daily limit
-      // The worker returns { allowed: true/false, prizeSats: number (if allowed) }
-      const spinUrl = `${WORKER_URL}/spin?address=${encodeURIComponent(address)}&captcha=${captchaToken}`;
-      const res = await fetch(spinUrl);
-      const data = await res.json();
-      
-      if (!data.allowed) {
-        return { success: false, message: data.message || "Daily limit reached! Come back tomorrow." };
-      }
-      
-      // Worker returns the prize determined server-side (weighted)
-      return { success: true, prizeSats: data.prizeSats };
-      
-    } catch (err) {
-      console.error("Spin error:", err);
-      return { success: false, message: "Could not verify spin limit. Try again later." };
-    }
-  }
-
-  // SPIN button handler
+  // SPIN button handler - checks with your Cloudflare Worker for daily limit
   centerSpinBtn.onclick = async () => {
     if (isSpinning) {
       statusMsgDiv.innerHTML = "⏳ Spin already in progress!";
@@ -487,20 +479,27 @@
     isSpinning = true;
     centerSpinBtn.disabled = true;
     centerSpinBtn.innerText = "✨";
-    statusMsgDiv.innerHTML = "🌙 Checking daily limit & processing spin...";
+    statusMsgDiv.innerHTML = "🌙 Checking daily limit with Cloudflare KV...";
     
     try {
-      const spinResult = await performSecureSpin(currentVerifiedAddress, captchaToken);
+      // Call YOUR worker to check IP + Address limits
+      const checkUrl = `${SPIN_CHECK_URL}?address=${encodeURIComponent(currentVerifiedAddress)}`;
+      const checkRes = await fetch(checkUrl);
+      const checkData = await checkRes.json();
       
-      if (!spinResult.success) {
-        statusMsgDiv.innerHTML = `⚠️ ${spinResult.message}`;
+      if (!checkData.allowed) {
+        let errorMsg = "Daily limit reached! ";
+        if (checkData.reason === "ip_limit") errorMsg += "Your IP has already claimed today.";
+        if (checkData.reason === "address_limit") errorMsg += "This Lightning address has already claimed today.";
+        statusMsgDiv.innerHTML = `⚠️ ${errorMsg} Come back tomorrow!`;
         centerSpinBtn.disabled = false;
         centerSpinBtn.innerText = "SPIN";
         isSpinning = false;
         return;
       }
       
-      const prizeSats = spinResult.prizeSats;
+      // If allowed, generate prize and show result
+      const prizeSats = generatePrize();
       
       // Animate wheel to land on prize
       const targetNumber = Math.min(50, Math.max(1, prizeSats));
