@@ -256,7 +256,6 @@
     
     <div id="captchaContainer" class="captcha-box"></div>
     
-    <div id="giftAnimation" class="gift-animation">✨</div>
     <div id="statusMsg" class="status-message">🔒 Enter Lightning address & solve captcha to unlock wheel</div>
   </div>
 
@@ -556,7 +555,7 @@
       giftAnimationDiv.innerHTML = `🎉 ${prizeSats} SATS! 🎉`;
       giftAnimationDiv.classList.add('result-animation');
       setTimeout(() => giftAnimationDiv.classList.remove('result-animation'), 600);
-      statusMsgDiv.innerHTML = `✨ You won ${prizeSats} sats! Come back tomorrow! ✨`;
+      statusMsgDiv.innerHTML = `You won ${prizeSats} sats! Come back tomorrow!`;
       statusMsgDiv.style.background = "#f5a62333";
       
       centerSpinBtn.disabled = true;
