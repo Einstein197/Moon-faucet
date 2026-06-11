@@ -111,6 +111,15 @@
     input:checked + .slider:before {
       transform: translateX(32px);
     }
+    .test-badge {
+      background: #ff3366;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
 
     .banner-link {
       display: block;
@@ -300,7 +309,7 @@
 
 <!-- Test Mode Banner -->
 <div id="testModeBanner" class="test-mode-banner">
-  🧪 TEST MODE ACTIVE — No limits, no database writes, fake sats only 🧪
+  TEST MODE ACTIVE — No limits, no database writes, fake sats only
 </div>
 
 <a href="https://kryptonlegend.fun" class="banner-link" target="_blank" rel="noopener noreferrer">
@@ -327,7 +336,7 @@
         <input type="checkbox" id="testModeToggle">
         <span class="slider"></span>
       </label>
-      <span class="toggle-label test">🧪 TEST MODE</span>
+      <span class="toggle-label test">TEST MODE</span>
     </div>
     
     <div id="statusMsg" class="status-message">🔒 Enter Lightning address & solve captcha to unlock wheel</div>
@@ -361,7 +370,8 @@
   let currentVerifiedAddress = null;
   let hcaptchaWidgetId = null;
   let isSpinning = false;
-  let isTestMode = false;
+  let verifyTimeout = null;
+  let isTestMode = false;  // Start in normal mode
 
   // Load test mode preference from localStorage
   const savedTestMode = localStorage.getItem('moon_faucet_test_mode');
@@ -376,12 +386,13 @@
     isTestMode = e.target.checked;
     if (isTestMode) {
       testModeBanner.classList.add('active');
-      statusMsgDiv.innerHTML = "🧪 TEST MODE ENABLED — No limits, unlimited spins for testing! 🧪";
+      statusMsgDiv.innerHTML = "TEST MODE ENABLED — No limits, unlimited spins for testing!";
       localStorage.setItem('moon_faucet_test_mode', 'true');
     } else {
       testModeBanner.classList.remove('active');
       statusMsgDiv.innerHTML = "🔒 Normal mode — Daily limits apply";
       localStorage.setItem('moon_faucet_test_mode', 'false');
+      // Re-verify current state to reset wheel visibility
       if (currentVerifiedAddress) {
         autoVerifyAddress();
       }
@@ -475,11 +486,10 @@
     wheelCanvas.style.transition = '';
   }
 
-  // Auto-verify Lightning address (NO DELAY - updates on every keystroke)
+  // Auto-verify Lightning address
   async function autoVerifyAddress() {
     const address = lightningInput.value.trim();
     
-    // If address is empty or doesn't have @, reset verification
     if (!address || !address.includes('@')) {
       if (isAddressVerified) {
         isAddressVerified = false;
@@ -491,19 +501,9 @@
     
     const [name, domain] = address.split('@');
     
-    // Don't bother verifying if name or domain is empty
-    if (!name || !domain) {
-      if (isAddressVerified) {
-        isAddressVerified = false;
-        currentVerifiedAddress = null;
-        updateWheelVisibility();
-      }
-      return;
-    }
-    
     try {
       statusMsgDiv.innerHTML = "🔄 Verifying Lightning address...";
-      const verifyUrl = `${VERIFY_URL}?name=${encodeURIComponent(name)}&domain=${encodeURIComponent(domain)}`;
+      const verifyUrl = `${VERIFY_URL}?name=${name}&domain=${domain}`;
       const res = await fetch(verifyUrl);
       const data = await res.json();
       
@@ -531,13 +531,15 @@
     }
   }
 
-  // IMMEDIATE verification on every keystroke (no debounce)
   lightningInput.addEventListener('input', () => {
-    autoVerifyAddress();
+    if (verifyTimeout) clearTimeout(verifyTimeout);
+    verifyTimeout = setTimeout(() => {
+      autoVerifyAddress();
+    }, 800);
   });
 
-  // Also verify on blur (when user leaves the field)
   lightningInput.addEventListener('blur', () => {
+    if (verifyTimeout) clearTimeout(verifyTimeout);
     autoVerifyAddress();
   });
 
@@ -547,7 +549,7 @@
       resetWheelTransform();
       drawWheel();
       if (isTestMode) {
-        statusMsgDiv.innerHTML = "🧪 TEST MODE: Unlimited spins! Click SPIN as many times as you want 🧪";
+        statusMsgDiv.innerHTML = "TEST MODE: Unlimited spins! Click SPIN as many times as you want";
       } else {
         statusMsgDiv.innerHTML = "✅ Address verified + Captcha solved! Click SPIN once daily. Good luck!";
       }
@@ -616,13 +618,14 @@
     centerSpinBtn.disabled = true;
     
     if (isTestMode) {
-      statusMsgDiv.innerHTML = "🧪 TEST MODE: Spinning with no limits... 🧪";
+      statusMsgDiv.innerHTML = "TEST MODE: Spinning with no limits...";
     } else {
       statusMsgDiv.innerHTML = "🌙 Checking daily limit with Cloudflare KV...";
     }
     
     try {
       let prizeSats;
+      let isAllowed = true;
       
       if (!isTestMode) {
         // Normal mode: Check with Cloudflare Worker
@@ -641,11 +644,12 @@
           return;
         }
         
+        // If worker returns a prize, use it; otherwise generate
         prizeSats = checkData.prizeSats || generatePrize();
       } else {
         // TEST MODE: Generate fake prize, no database write
         prizeSats = generatePrize();
-        statusMsgDiv.innerHTML = "🧪 TEST SPIN — No sats will be sent, no limits applied 🧪";
+        statusMsgDiv.innerHTML = "TEST SPIN — No sats will be sent, no limits applied";
         await new Promise(res => setTimeout(res, 500));
       }
       
@@ -662,7 +666,7 @@
       await new Promise(res => setTimeout(res, 2800));
       
       if (isTestMode) {
-        statusMsgDiv.innerHTML = `🧪🧪🧪 TEST SPIN: You would have won ${prizeSats} SATS! (No sats awarded) 🧪🧪🧪`;
+        statusMsgDiv.innerHTML = `TEST SPIN: You would have won ${prizeSats} SATS! (No sats awarded)`;
       } else {
         statusMsgDiv.innerHTML = `🎉✨ YOU WON ${prizeSats} SATS! ✨🎉`;
       }
