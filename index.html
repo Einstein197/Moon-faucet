@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>MOON Faucet — Test Mode Toggle</title>
+  <title>MOON Faucet</title>
   <link rel="icon" type="image/png" href="moon.png">
 
   <style>
@@ -549,7 +549,7 @@
       resetWheelTransform();
       drawWheel();
       if (isTestMode) {
-        statusMsgDiv.innerHTML = "🧪 TEST MODE: Unlimited spins! Click SPIN as many times as you want 🧪";
+        statusMsgDiv.innerHTML = "TEST MODE: Unlimited spins! Click SPIN as many times as you want";
       } else {
         statusMsgDiv.innerHTML = "✅ Address verified + Captcha solved! Click SPIN once daily. Good luck!";
       }
@@ -616,10 +616,9 @@
     
     isSpinning = true;
     centerSpinBtn.disabled = true;
-    centerSpinBtn.innerText = "✨";
     
     if (isTestMode) {
-      statusMsgDiv.innerHTML = "🧪 TEST MODE: Spinning with no limits... 🧪";
+      statusMsgDiv.innerHTML = "TEST MODE: Spinning with no limits...";
     } else {
       statusMsgDiv.innerHTML = "🌙 Checking daily limit with Cloudflare KV...";
     }
@@ -650,7 +649,7 @@
       } else {
         // TEST MODE: Generate fake prize, no database write
         prizeSats = generatePrize();
-        statusMsgDiv.innerHTML = "🧪 TEST SPIN — No sats will be sent, no limits applied 🧪";
+        statusMsgDiv.innerHTML = "TEST SPIN — No sats will be sent, no limits applied";
         await new Promise(res => setTimeout(res, 500));
       }
       
@@ -667,7 +666,7 @@
       await new Promise(res => setTimeout(res, 2800));
       
       if (isTestMode) {
-        statusMsgDiv.innerHTML = `🧪🧪🧪 TEST SPIN: You would have won ${prizeSats} SATS! (No sats awarded) 🧪🧪🧪`;
+        statusMsgDiv.innerHTML = `TEST SPIN: You would have won ${prizeSats} SATS! (No sats awarded)`;
       } else {
         statusMsgDiv.innerHTML = `🎉✨ YOU WON ${prizeSats} SATS! ✨🎉`;
       }
