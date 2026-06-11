@@ -309,7 +309,7 @@
 
 <!-- Test Mode Banner -->
 <div id="testModeBanner" class="test-mode-banner">
-  🧪 TEST MODE ACTIVE — No limits, no database writes, fake sats only 🧪
+  TEST MODE ACTIVE — No limits, no database writes, fake sats only
 </div>
 
 <a href="https://kryptonlegend.fun" class="banner-link" target="_blank" rel="noopener noreferrer">
@@ -336,7 +336,7 @@
         <input type="checkbox" id="testModeToggle">
         <span class="slider"></span>
       </label>
-      <span class="toggle-label test">🧪 TEST MODE</span>
+      <span class="toggle-label test">TEST MODE</span>
     </div>
     
     <div id="statusMsg" class="status-message">🔒 Enter Lightning address & solve captcha to unlock wheel</div>
@@ -386,7 +386,7 @@
     isTestMode = e.target.checked;
     if (isTestMode) {
       testModeBanner.classList.add('active');
-      statusMsgDiv.innerHTML = "🧪 TEST MODE ENABLED — No limits, unlimited spins for testing! 🧪";
+      statusMsgDiv.innerHTML = "TEST MODE ENABLED — No limits, unlimited spins for testing!";
       localStorage.setItem('moon_faucet_test_mode', 'true');
     } else {
       testModeBanner.classList.remove('active');
