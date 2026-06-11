@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>MOON Faucet — Secure Spin & Win</title>
+  <title>MOON Faucet — Test Mode Toggle</title>
   <link rel="icon" type="image/png" href="moon.png">
 
   <style>
@@ -28,6 +28,97 @@
       justify-content: center;
       min-height: 100vh;
       padding: 20px;
+    }
+
+    /* Test Mode Banner */
+    .test-mode-banner {
+      background: linear-gradient(95deg, #ff3366, #ff6633);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 60px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(255,51,102,0.5);
+      display: none;
+    }
+    .test-mode-banner.active {
+      display: block;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    /* Toggle Switch */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+      padding: 10px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 60px;
+    }
+    .toggle-label {
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+    .toggle-label.normal {
+      color: #88ff88;
+    }
+    .toggle-label.test {
+      color: #ff8888;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 28px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #4CAF50;
+      transition: 0.3s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #ff3366;
+    }
+    input:checked + .slider:before {
+      transform: translateX(32px);
+    }
+    .test-badge {
+      background: #ff3366;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-left: 10px;
     }
 
     .banner-link {
@@ -216,6 +307,11 @@
 </head>
 <body>
 
+<!-- Test Mode Banner -->
+<div id="testModeBanner" class="test-mode-banner">
+  🧪 TEST MODE ACTIVE — No limits, no database writes, fake sats only 🧪
+</div>
+
 <a href="https://kryptonlegend.fun" class="banner-link" target="_blank" rel="noopener noreferrer">
   <img class="banner-img" src="banner.png" alt="Moon Faucet Banner" onerror="this.src='https://placehold.co/800x150?text=Moon+Faucet'">
 </a>
@@ -232,6 +328,16 @@
     <input type="text" id="lightningAddress" class="light-input" placeholder="cat@discoverlightning.org" autocomplete="off">
     
     <div id="captchaContainer" class="captcha-box"></div>
+    
+    <!-- Test Mode Toggle Switch -->
+    <div class="toggle-container">
+      <span class="toggle-label normal">🔒 NORMAL</span>
+      <label class="switch">
+        <input type="checkbox" id="testModeToggle">
+        <span class="slider"></span>
+      </label>
+      <span class="toggle-label test">🧪 TEST MODE</span>
+    </div>
     
     <div id="statusMsg" class="status-message">🔒 Enter Lightning address & solve captcha to unlock wheel</div>
   </div>
@@ -255,6 +361,8 @@
   const wheelSection = document.getElementById('wheelSection');
   const wheelCanvas = document.getElementById('wheelCanvas');
   const centerSpinBtn = document.getElementById('centerSpinBtn');
+  const testModeToggle = document.getElementById('testModeToggle');
+  const testModeBanner = document.getElementById('testModeBanner');
 
   // State
   let isCaptchaResolved = false;
@@ -263,26 +371,52 @@
   let hcaptchaWidgetId = null;
   let isSpinning = false;
   let verifyTimeout = null;
+  let isTestMode = false;  // Start in normal mode
+
+  // Load test mode preference from localStorage
+  const savedTestMode = localStorage.getItem('moon_faucet_test_mode');
+  if (savedTestMode === 'true') {
+    isTestMode = true;
+    testModeToggle.checked = true;
+    testModeBanner.classList.add('active');
+  }
+
+  // Toggle test mode
+  testModeToggle.addEventListener('change', (e) => {
+    isTestMode = e.target.checked;
+    if (isTestMode) {
+      testModeBanner.classList.add('active');
+      statusMsgDiv.innerHTML = "🧪 TEST MODE ENABLED — No limits, unlimited spins for testing! 🧪";
+      localStorage.setItem('moon_faucet_test_mode', 'true');
+    } else {
+      testModeBanner.classList.remove('active');
+      statusMsgDiv.innerHTML = "🔒 Normal mode — Daily limits apply";
+      localStorage.setItem('moon_faucet_test_mode', 'false');
+      // Re-verify current state to reset wheel visibility
+      if (currentVerifiedAddress) {
+        autoVerifyAddress();
+      }
+    }
+    updateWheelVisibility();
+  });
 
   // Cloudflare Worker endpoints
   const SPIN_CHECK_URL = "https://spin-check.shadowlegendcg.workers.dev/spin-check";
   const VERIFY_URL = "https://ln-verify.shadowlegendcg.workers.dev";
 
-  // Weighted prize generation (will be done client-side BUT with server limit enforcement)
-  // Since your worker only checks limits, we generate prize client-side
-  // For production, move prize generation to worker
+  // Weighted prize generation
   function generatePrize() {
     const rand = Math.random();
     if (rand < 0.70) {
-      return Math.floor(Math.random() * 10) + 1;      // 1-10 (70%)
+      return Math.floor(Math.random() * 10) + 1;
     } else if (rand < 0.90) {
-      return Math.floor(Math.random() * 15) + 11;     // 11-25 (20%)
+      return Math.floor(Math.random() * 15) + 11;
     } else if (rand < 0.98) {
-      return Math.floor(Math.random() * 15) + 26;     // 26-40 (8%)
+      return Math.floor(Math.random() * 15) + 26;
     } else if (rand < 0.998) {
-      return Math.floor(Math.random() * 9) + 41;      // 41-49 (1.8%)
+      return Math.floor(Math.random() * 9) + 41;
     } else {
-      return 50;                                      // 50 (0.2%)
+      return 50;
     }
   }
 
@@ -352,7 +486,7 @@
     wheelCanvas.style.transition = '';
   }
 
-  // Auto-verify Lightning address using Cloudflare Worker
+  // Auto-verify Lightning address
   async function autoVerifyAddress() {
     const address = lightningInput.value.trim();
     
@@ -414,8 +548,12 @@
       wheelSection.style.display = "flex";
       resetWheelTransform();
       drawWheel();
-      statusMsgDiv.innerHTML = "✅ Address verified + Captcha solved! Click SPIN once daily. Good luck!";
-      statusMsgDiv.style.background = "#163a1fcc";
+      if (isTestMode) {
+        statusMsgDiv.innerHTML = "🧪 TEST MODE: Unlimited spins! Click SPIN as many times as you want 🧪";
+      } else {
+        statusMsgDiv.innerHTML = "✅ Address verified + Captcha solved! Click SPIN once daily. Good luck!";
+      }
+      statusMsgDiv.style.background = isTestMode ? "#663300cc" : "#163a1fcc";
     } else if (isAddressVerified && !isCaptchaResolved) {
       wheelSection.style.display = "none";
       statusMsgDiv.innerHTML = "🔐 Address verified! Now solve the hCaptcha to unlock the wheel.";
@@ -454,7 +592,7 @@
     }
   };
 
-  // SPIN button handler - checks with your Cloudflare Worker for daily limit
+  // SPIN button handler - respects test mode
   centerSpinBtn.onclick = async () => {
     if (isSpinning) {
       statusMsgDiv.innerHTML = "⏳ Spin already in progress!";
@@ -471,7 +609,7 @@
       captchaToken = hcaptcha.getResponse(hcaptchaWidgetId);
     }
     
-    if (!captchaToken) {
+    if (!captchaToken && !isTestMode) {
       statusMsgDiv.innerHTML = "⚠️ Captcha expired. Please re-solve.";
       return;
     }
@@ -479,27 +617,42 @@
     isSpinning = true;
     centerSpinBtn.disabled = true;
     centerSpinBtn.innerText = "✨";
-    statusMsgDiv.innerHTML = "🌙 Checking daily limit with Cloudflare KV...";
+    
+    if (isTestMode) {
+      statusMsgDiv.innerHTML = "🧪 TEST MODE: Spinning with no limits... 🧪";
+    } else {
+      statusMsgDiv.innerHTML = "🌙 Checking daily limit with Cloudflare KV...";
+    }
     
     try {
-      // Call YOUR worker to check IP + Address limits
-      const checkUrl = `${SPIN_CHECK_URL}?address=${encodeURIComponent(currentVerifiedAddress)}`;
-      const checkRes = await fetch(checkUrl);
-      const checkData = await checkRes.json();
+      let prizeSats;
+      let isAllowed = true;
       
-      if (!checkData.allowed) {
-        let errorMsg = "Daily limit reached! ";
-        if (checkData.reason === "ip_limit") errorMsg += "Your IP has already claimed today.";
-        if (checkData.reason === "address_limit") errorMsg += "This Lightning address has already claimed today.";
-        statusMsgDiv.innerHTML = `⚠️ ${errorMsg} Come back tomorrow!`;
-        centerSpinBtn.disabled = false;
-        centerSpinBtn.innerText = "SPIN";
-        isSpinning = false;
-        return;
+      if (!isTestMode) {
+        // Normal mode: Check with Cloudflare Worker
+        const checkUrl = `${SPIN_CHECK_URL}?address=${encodeURIComponent(currentVerifiedAddress)}`;
+        const checkRes = await fetch(checkUrl);
+        const checkData = await checkRes.json();
+        
+        if (!checkData.allowed) {
+          let errorMsg = "Daily limit reached! ";
+          if (checkData.reason === "ip_limit") errorMsg += "Your IP has already claimed today.";
+          if (checkData.reason === "address_limit") errorMsg += "This Lightning address has already claimed today.";
+          statusMsgDiv.innerHTML = `⚠️ ${errorMsg} Come back tomorrow!`;
+          centerSpinBtn.disabled = false;
+          centerSpinBtn.innerText = "SPIN";
+          isSpinning = false;
+          return;
+        }
+        
+        // If worker returns a prize, use it; otherwise generate
+        prizeSats = checkData.prizeSats || generatePrize();
+      } else {
+        // TEST MODE: Generate fake prize, no database write
+        prizeSats = generatePrize();
+        statusMsgDiv.innerHTML = "🧪 TEST SPIN — No sats will be sent, no limits applied 🧪";
+        await new Promise(res => setTimeout(res, 500));
       }
-      
-      // If allowed, generate prize and show result
-      const prizeSats = generatePrize();
       
       // Animate wheel to land on prize
       const targetNumber = Math.min(50, Math.max(1, prizeSats));
@@ -513,13 +666,17 @@
       
       await new Promise(res => setTimeout(res, 2800));
       
-      statusMsgDiv.innerHTML = `🎉✨ YOU WON ${prizeSats} SATS! ✨🎉`;
+      if (isTestMode) {
+        statusMsgDiv.innerHTML = `🧪🧪🧪 TEST SPIN: You would have won ${prizeSats} SATS! (No sats awarded) 🧪🧪🧪`;
+      } else {
+        statusMsgDiv.innerHTML = `🎉✨ YOU WON ${prizeSats} SATS! ✨🎉`;
+      }
       statusMsgDiv.classList.add('result-animation');
       setTimeout(() => statusMsgDiv.classList.remove('result-animation'), 600);
-      statusMsgDiv.style.background = "#f5a62333";
+      statusMsgDiv.style.background = isTestMode ? "#663300cc" : "#f5a62333";
       
       centerSpinBtn.disabled = true;
-      centerSpinBtn.innerText = "DONE";
+      centerSpinBtn.innerText = isTestMode ? "TEST" : "DONE";
       
       setTimeout(() => {
         centerSpinBtn.disabled = false;
