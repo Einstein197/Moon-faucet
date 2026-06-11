@@ -9,7 +9,7 @@
   <style>
     * {
       box-sizing: border-box;
-      user-select: none; /* avoid accidental selection on wheel */
+      user-select: none;
     }
 
     html, body {
@@ -30,7 +30,6 @@
       padding: 20px;
     }
 
-    /* banner */
     .banner-link {
       display: block;
       max-width: 800px;
@@ -51,7 +50,6 @@
       object-fit: cover;
     }
 
-    /* ad frame - sandboxed for security */
     .ad-frame {
       margin: 10px auto 15px auto;
       width: 100%;
@@ -67,7 +65,6 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
-    /* main wrapper */
     .main-panel {
       display: flex;
       flex-wrap: wrap;
@@ -78,7 +75,6 @@
       width: 100%;
     }
 
-    /* claim form card */
     .card {
       background: rgba(10, 15, 30, 0.8);
       backdrop-filter: blur(12px);
@@ -88,7 +84,6 @@
       width: 100%;
       box-shadow: 0 25px 45px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,200,100,0.2);
       text-align: center;
-      transition: all 0.2s;
     }
 
     h1 {
@@ -124,7 +119,22 @@
       box-shadow: 0 0 8px #ffb34780;
     }
 
-    /* hcaptcha container */
+    .verify-btn {
+      background: linear-gradient(95deg, #f9a826, #ffcc44);
+      border: none;
+      padding: 12px 24px;
+      border-radius: 40px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 20px;
+      font-size: 1rem;
+      transition: transform 0.1s;
+      width: 100%;
+    }
+    .verify-btn:active {
+      transform: scale(0.97);
+    }
+
     .captcha-box {
       display: flex;
       justify-content: center;
@@ -147,16 +157,6 @@
       min-height: 70px;
     }
 
-    .prize-badge {
-      background: linear-gradient(95deg, #f9a826, #ffdd77);
-      color: #1e1a2f;
-      padding: 8px 16px;
-      border-radius: 60px;
-      font-weight: bold;
-      display: inline-block;
-    }
-
-    /* wheel container */
     .wheel-wrapper {
       display: flex;
       flex-direction: column;
@@ -181,11 +181,14 @@
       text-shadow: 0 0 4px #ff9900;
     }
     #wheelCanvas {
-      width: 100%;
-      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100% !important;
+      height: 100% !important;
       border-radius: 50%;
       box-shadow: 0 20px 35px rgba(0,0,0,0.5), 0 0 0 5px #f7b32b, 0 0 0 12px #1f1b2e;
-      transition: transform 2.5s cubic-bezier(0.12, 0.85, 0.27, 1.02);
+      transition: transform 2.8s cubic-bezier(0.17, 0.94, 0.32, 1.05);
       background: #2a2538;
     }
     .spin-center-btn {
@@ -205,8 +208,6 @@
       cursor: pointer;
       z-index: 20;
       box-shadow: 0 0 0 4px rgba(0,0,0,0.3), 0 8px 20px black;
-      transition: transform 0.1s ease;
-      letter-spacing: 1px;
     }
     .spin-center-btn:active {
       transform: translate(-50%, -50%) scale(0.96);
@@ -214,8 +215,6 @@
     .spin-center-btn:disabled {
       opacity: 0.55;
       cursor: not-allowed;
-      filter: grayscale(0.1);
-      transform: translate(-50%, -50%) scale(0.98);
     }
 
     @media (max-width: 860px) {
@@ -236,6 +235,7 @@
         top: -32px;
       }
     }
+    
     @keyframes fadePop {
       0% { opacity: 0; transform: scale(0.8);}
       100% { opacity: 1; transform: scale(1);}
@@ -243,13 +243,12 @@
     .result-animation {
       animation: fadePop 0.4s ease-out;
     }
-    .hidden {
-      display: none;
-    }
+    
     footer {
       font-size: 11px;
       margin-top: 30px;
       color: #aaa;
+      text-align: center;
     }
   </style>
   <script src="https://js.hcaptcha.com/1/api.js?onload=hcaptchaOnLoad" async defer></script>
@@ -265,19 +264,19 @@
 </div>
 
 <div class="main-panel">
-  <!-- left claim card -->
   <div class="card">
     <h1>🌕 MOON Faucet</h1>
     <div class="sub">⚡ verify address → solve captcha → spin & win sats!</div>
-    <input type="text" id="lightningAddress" class="light-input" placeholder="yourname@getalby.com" autocomplete="off">
+    
+    <input type="text" id="lightningAddress" class="light-input" placeholder="name@domain.com" autocomplete="off">
+    <button id="verifyAddressBtn" class="verify-btn">✓ Verify Lightning Address</button>
     
     <div id="captchaContainer" class="captcha-box"></div>
     
     <div id="giftAnimation" class="gift-animation">✨</div>
-    <div id="statusMsg" class="status-message">🔒 Complete captcha to unlock wheel</div>
+    <div id="statusMsg" class="status-message">🔒 Verify address & solve captcha to unlock wheel</div>
   </div>
 
-  <!-- wheel area (initially hidden) -->
   <div class="wheel-wrapper" id="wheelSection" style="display: none;">
     <div class="wheel-relative">
       <div class="wheel-pointer">▼</div>
@@ -286,23 +285,13 @@
     </div>
   </div>
 </div>
+
 <footer>🎁 Daily limit • verifiable spins • fair weighted odds</footer>
 
 <script>
-  // ---------- SECURE FRONTEND LOGIC (with server-side validation via workers) ----------
-  // All critical checks: address verification, daily limit, and spin outcome are verified via backend calls.
-  // No client-side manipulation of reward amount possible — outcome is enforced server side.
-  
-  // Global state
-  let isCaptchaResolved = false;
-  let currentVerifiedAddress = null;      // stores verified LN address after successful LN check
-  let hcaptchaWidgetId = null;
-  let isSpinning = false;
-  let spinCooldown = false;               // prevent double spin
-  let lastSpinTimestamp = 0;
-
   // DOM elements
   const lightningInput = document.getElementById('lightningAddress');
+  const verifyBtn = document.getElementById('verifyAddressBtn');
   const captchaContainer = document.getElementById('captchaContainer');
   const giftAnimationDiv = document.getElementById('giftAnimation');
   const statusMsgDiv = document.getElementById('statusMsg');
@@ -310,80 +299,112 @@
   const wheelCanvas = document.getElementById('wheelCanvas');
   const centerSpinBtn = document.getElementById('centerSpinBtn');
 
-  // ---------- WHEEL DRAW CONFIG ----------
+  // State
+  let isCaptchaResolved = false;
+  let isAddressVerified = false;
+  let currentVerifiedAddress = null;
+  let hcaptchaWidgetId = null;
+  let isSpinning = false;
+
+  // Wheel config
   const SLICES = 50;
   const SLICE_ANGLE_DEG = 360 / SLICES;
   const CENTER_X = 200;
   const CENTER_Y = 200;
   const RADIUS = 200;
 
-  let ctx = wheelCanvas.getContext('2d');
-  
+  // CRITICAL FIX: Properly draw the wheel with correct canvas dimensions
   function drawWheel() {
+    // Ensure canvas dimensions are set correctly
+    wheelCanvas.width = 400;
+    wheelCanvas.height = 400;
+    
+    const ctx = wheelCanvas.getContext('2d');
     const angleRad = (Math.PI * 2) / SLICES;
+    
     ctx.clearRect(0, 0, 400, 400);
     ctx.save();
     ctx.translate(CENTER_X, CENTER_Y);
+    
     for (let i = 0; i < SLICES; i++) {
       const startAngle = (i - 0.5) * angleRad - Math.PI / 2;
       const endAngle   = (i + 0.5) * angleRad - Math.PI / 2;
+      
       ctx.beginPath();
       ctx.moveTo(0, 0);
       ctx.arc(0, 0, RADIUS, startAngle, endAngle);
-      // alternating vibrant colors
+      
+      // Alternating vibrant colors
       ctx.fillStyle = i % 2 === 0 ? "#2b60ff" : "#f09d1c";
       ctx.fill();
+      
+      // Add stroke for better visibility
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      
       ctx.save();
       const midAngle = (startAngle + endAngle) / 2;
       ctx.rotate(midAngle);
       ctx.textAlign = "right";
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 18px 'Segoe UI'";
+      ctx.font = "bold 18px 'Segoe UI', 'Arial'";
       ctx.shadowBlur = 0;
       const labelNumber = ((SLICES - i - 1 + SLICES) % SLICES) + 1;
-      ctx.fillText(labelNumber, RADIUS - 18, 8);
+      ctx.fillText(labelNumber.toString(), RADIUS - 20, 8);
       ctx.restore();
     }
-    // inner circle decoration
+    
+    // Inner circle decoration
     ctx.beginPath();
-    ctx.arc(0, 0, 38, 0, 2 * Math.PI);
+    ctx.arc(0, 0, 45, 0, 2 * Math.PI);
     ctx.fillStyle = "#1f1a2b";
     ctx.fill();
+    ctx.strokeStyle = "#ffcc44";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    
     ctx.restore();
   }
+
+  // Initial draw
   drawWheel();
 
-  // resize handler: keep canvas crisp
-  function handleWheelResize() {
-    if (wheelCanvas) {
-      const container = wheelCanvas.parentElement;
-      const size = Math.min(container.clientWidth, 400);
-      wheelCanvas.style.width = `${size}px`;
-      wheelCanvas.style.height = `${size}px`;
-    }
-  }
-  window.addEventListener('resize', handleWheelResize);
-  handleWheelResize();
-
-  // ---- Helper: reset wheel transform without animation ----
   function resetWheelTransform() {
     wheelCanvas.style.transition = 'none';
     wheelCanvas.style.transform = 'rotate(0deg)';
-    // force reflow
     void wheelCanvas.offsetHeight;
     wheelCanvas.style.transition = '';
   }
 
-  // ---------------- FAIR WEIGHTED OUTCOME (determined on BACKEND) ----------------
-  // We'll call /api/spin which returns { success, prizeSats, token, message }
-  // The backend enforces daily limit per lightning address using a secure KV store.
-  // It also verifies captcha token and returns a signed/spin outcome.
-  // Because payment is not required, we just display the prize amount from server.
-  
-  // STEP 1: Lightning address verification via worker (secure)
+  // Check and show/hide wheel based on both conditions
+  function updateWheelVisibility() {
+    if (isAddressVerified && isCaptchaResolved && currentVerifiedAddress) {
+      wheelSection.style.display = "flex";
+      resetWheelTransform();
+      // Redraw wheel in case it got corrupted
+      drawWheel();
+      statusMsgDiv.innerHTML = "✅ Address verified + Captcha solved! Click SPIN once daily. Good luck!";
+      statusMsgDiv.style.background = "#163a1fcc";
+    } else if (isAddressVerified && !isCaptchaResolved) {
+      wheelSection.style.display = "none";
+      statusMsgDiv.innerHTML = "🔐 Address verified! Now solve the hCaptcha to unlock the wheel.";
+      statusMsgDiv.style.background = "#00000066";
+    } else if (!isAddressVerified && isCaptchaResolved) {
+      wheelSection.style.display = "none";
+      statusMsgDiv.innerHTML = "✅ Captcha solved! Click 'Verify Lightning Address' to unlock the wheel.";
+      statusMsgDiv.style.background = "#00000066";
+    } else {
+      wheelSection.style.display = "none";
+      statusMsgDiv.innerHTML = "🔒 Verify your Lightning address AND solve captcha to spin the wheel!";
+      statusMsgDiv.style.background = "#00000066";
+    }
+  }
+
+  // Lightning address verification via worker
   async function verifyLightningAddress(address) {
     if (!address || !address.includes('@')) {
-      return { valid: false, error: "Invalid format. Use name@domain" };
+      return { valid: false, error: "Invalid format. Use name@domain.com" };
     }
     const [name, domain] = address.split('@');
     try {
@@ -393,260 +414,190 @@
       if (data && data.valid === true) {
         return { valid: true };
       } else {
-        return { valid: false, error: "Lightning address not found or invalid." };
+        return { valid: false, error: "Lightning address not found." };
       }
     } catch (err) {
       console.error("verify error", err);
-      return { valid: false, error: "Verification service unavailable" };
+      return { valid: false, error: "Verification service unavailable. Try again." };
     }
   }
 
-  // Reset UI after successful captcha -> unlock wheel & allow spin
+  // Verify button click handler
+  verifyBtn.onclick = async () => {
+    const address = lightningInput.value.trim();
+    if (!address) {
+      statusMsgDiv.innerHTML = "⚠️ Please enter a Lightning address first.";
+      return;
+    }
+    
+    statusMsgDiv.innerHTML = "🔄 Verifying Lightning address...";
+    const verify = await verifyLightningAddress(address);
+    
+    if (!verify.valid) {
+      statusMsgDiv.innerHTML = `❌ ${verify.error || "Invalid Lightning address"}`;
+      isAddressVerified = false;
+      currentVerifiedAddress = null;
+      updateWheelVisibility();
+      return;
+    }
+    
+    isAddressVerified = true;
+    currentVerifiedAddress = address;
+    statusMsgDiv.innerHTML = "✅ Lightning address verified!";
+    updateWheelVisibility();
+  };
+
+  // hCaptcha callbacks
   function onCaptchaSuccess() {
     if (isCaptchaResolved) return;
     isCaptchaResolved = true;
-    statusMsgDiv.innerHTML = "✅ Captcha solved! Now verify your Lightning address and click SPIN.";
-    statusMsgDiv.style.background = "#163a1fcc";
-    // show wheel if address already verified before captcha? We'll handle in address verification.
-    // but we re-check address status
-    checkAndUnlockWheel();
+    statusMsgDiv.innerHTML = "✅ Captcha solved!";
+    updateWheelVisibility();
   }
 
-  // Function to validate address, captcha state and show wheel
-  async function checkAndUnlockWheel() {
-    const address = lightningInput.value.trim();
-    if (!address) {
-      wheelSection.style.display = "none";
-      statusMsgDiv.innerHTML = "⚠️ Enter Lightning address first, then solve captcha.";
-      return;
-    }
-    if (!isCaptchaResolved) {
-      wheelSection.style.display = "none";
-      statusMsgDiv.innerHTML = "🔐 Solve hCaptcha first to unlock the wheel!";
-      return;
-    }
-    // verify address again fresh before unlocking wheel
-    statusMsgDiv.innerHTML = "🔄 Verifying Lightning address...";
-    const verify = await verifyLightningAddress(address);
-    if (!verify.valid) {
-      statusMsgDiv.innerHTML = `❌ ${verify.error || "Lightning address invalid"}`;
-      wheelSection.style.display = "none";
-      currentVerifiedAddress = null;
-      return;
-    }
-    // address verified and captcha OK -> show wheel
-    currentVerifiedAddress = address;
-    wheelSection.style.display = "flex";
-    statusMsgDiv.innerHTML = "🎯 Address verified! Click SPIN once daily. Good luck!";
-    resetWheelTransform(); // ensure wheel not rotated from previous spin
+  function onCaptchaExpired() {
+    isCaptchaResolved = false;
+    statusMsgDiv.innerHTML = "⌛ Captcha expired. Please solve again.";
+    updateWheelVisibility();
   }
 
-  // when user types or changes address, revalidate state
-  lightningInput.addEventListener('input', async () => {
-    if (isCaptchaResolved) {
-      await checkAndUnlockWheel();
-    } else {
-      wheelSection.style.display = "none";
-      statusMsgDiv.innerHTML = "🔐 Solve captcha to activate wheel";
-    }
-    // reset status
-    giftAnimationDiv.innerHTML = "✨";
-    document.getElementById('statusMsg').classList.remove('result-animation');
-  });
-
-  // ------ SPIN LOGIC WITH BACKEND DAILY LIMIT & RNG (SECURE) -------
-  centerSpinBtn.onclick = async () => {
-    if (isSpinning || spinCooldown) {
-      statusMsgDiv.innerHTML = "⏳ Spin already in progress. Please wait!";
-      return;
-    }
-    const address = currentVerifiedAddress;
-    if (!address || !isCaptchaResolved) {
-      statusMsgDiv.innerHTML = "❌ Complete captcha & verify lightning address first.";
-      return;
-    }
-
-    // re-check daily limit & server-side spin result (no client manipulation)
-    isSpinning = true;
-    centerSpinBtn.disabled = true;
-    const originalBtnText = centerSpinBtn.innerText;
-    centerSpinBtn.innerText = "✨";
-    statusMsgDiv.innerHTML = "🌙 Processing secure spin...";
-
-    try {
-      // Step 1: call spin request worker that checks daily limit & returns a one-time token & predetermined prize
-      // The backend endpoint MUST validate:
-      // - Captcha token (we pass the hCaptcha response) -> we will obtain hCaptcha response token
-      let captchaToken = '';
-      if (hcaptchaWidgetId !== null && typeof hcaptcha !== 'undefined' && hcaptcha.getResponse) {
-        captchaToken = hcaptcha.getResponse(hcaptchaWidgetId);
-      }
-      if (!captchaToken) {
-        statusMsgDiv.innerHTML = "⚠️ Captcha expired or missing. Please re-solve captcha.";
-        resetSpinButton();
-        return;
-      }
-
-      const backendUrl = "https://faucet-spin.shadowlegendcg.workers.dev/api/spin";  // hypothetical secure worker (replace with actual)
-      // For demo resilience — we'll implement a local fallback to SIMULATE secure behavior? No, we must ensure no cheating.
-      // But since actual backend worker may not be deployed, we simulate a secure call but using a local demo with IP+address limit?
-      // In real world, replace with actual worker that stores spins and enforces 1/day.
-      // To keep demo fully functional and secure (without real payment), I'll implement a client-side INDEXEDDB + address daily limit
-      // to emulate exactly the same security pattern BUT without backend worker, while keeping fairness and preventing client reward manipulation.
-      // However the requirement "fix everything except the payment" includes limit and outcome fairness. I'll implement a proper local daily limit using localStorage + signed fake but server-like behaviour:
-      
-      // Because actual worker URL might not exist, I'll build a robust local-storage daily limit + cryptographic imitation to prevent reward tampering.
-      // But to match original intention, I'll implement a proper mock secure backend within JS that enforces daily limits per address,
-      // and weighted outcome is generated via deterministic entropy but not editable by user. Real production would move to worker.
-      // I choose to build secure local simulation that no user can tamper reward amount (no client-side prize choice).
-      
-      // Simulated secure backend call (in production replace with fetch to your worker)
-      const spinResult = await performSecureSpin(address, captchaToken);
-      
-      if (!spinResult.success) {
-        statusMsgDiv.innerHTML = `⚠️ ${spinResult.message || "Spin not allowed. Daily limit reached or error."}`;
-        resetSpinButton();
-        return;
-      }
-      
-      const prizeSats = spinResult.prizeSats;
-      const spinToken = spinResult.token;
-      
-      // --- ANIMATION: map prize sats (1..50) to wheel slice index (reverse mapping)
-      let targetNumber = prizeSats;
-      if (targetNumber < 1) targetNumber = 1;
-      if (targetNumber > 50) targetNumber = 50;
-      
-      const winningIndex = (SLICES - targetNumber) % SLICES;
-      const fullSpins = 8 + Math.floor(Math.random() * 7); // 8-14 full rotations
-      const extraDegrees = fullSpins * 360;
-      const stopAngle = extraDegrees - (winningIndex * SLICE_ANGLE_DEG);
-      
-      // apply smooth transition
-      wheelCanvas.style.transition = "transform 2.8s cubic-bezier(0.17, 0.94, 0.32, 1.05)";
-      wheelCanvas.style.transform = `rotate(${stopAngle}deg)`;
-      
-      statusMsgDiv.innerHTML = "🌀 Spinning the Moon Wheel...";
-      
-      await new Promise(res => setTimeout(res, 2900));
-      
-      // Display result with animation
-      giftAnimationDiv.innerHTML = `🎉 ${prizeSats} SATS! 🎉`;
-      giftAnimationDiv.classList.add('result-animation');
-      setTimeout(() => giftAnimationDiv.classList.remove('result-animation'), 600);
-      statusMsgDiv.innerHTML = `✨ You won ${prizeSats} sats! ✨ (Daily limit used)`;
-      statusMsgDiv.style.background = "#f5a62333";
-      
-      // store spin done marker to prevent double in same session
-      spinCooldown = true;
-      setTimeout(() => { spinCooldown = false; }, 3000);
-      
-      resetSpinButton();
-      // after spin, disable further spins until tomorrow (server already blocked)
-      centerSpinBtn.disabled = true;
-      centerSpinBtn.style.opacity = "0.7";
-      centerSpinBtn.innerText = "DONE";
-      setTimeout(() => {
-        if(!isSpinning) {
-          centerSpinBtn.disabled = false;
-          centerSpinBtn.style.opacity = "1";
-          centerSpinBtn.innerText = "SPIN";
-        }
-      }, 4000);
-      
-      isSpinning = false;
-      
-    } catch (err) {
-      console.error(err);
-      statusMsgDiv.innerHTML = "⚠️ Network error. Try again later.";
-      resetSpinButton();
+  window.hcaptchaOnLoad = function() {
+    if (captchaContainer) {
+      hcaptchaWidgetId = hcaptcha.render('captchaContainer', {
+        sitekey: 'a7725132-7912-4624-a0fe-e614b40c1a7e',
+        callback: onCaptchaSuccess,
+        'expired-callback': onCaptchaExpired
+      });
     }
   };
-  
-  function resetSpinButton() {
-    isSpinning = false;
-    centerSpinBtn.disabled = false;
-    centerSpinBtn.innerText = "SPIN";
-    centerSpinBtn.style.opacity = "1";
-  }
-  
-  // ---- Secure Mock Backend (full daily limit & weighted outcome - no client choice) ----
-  // In real app replace with Cloudflare Worker. This uses localStorage with address+date + secure generation
+
+  // Secure spin with daily limit (localStorage per address)
   const STORAGE_KEY_PREFIX = "moon_faucet_spin_";
-  
+
   async function performSecureSpin(address, captchaToken) {
-    // Validate captcha token not empty (mock additional integrity)
     if (!captchaToken || captchaToken.length < 5) {
       return { success: false, message: "Captcha validation failed" };
     }
-    const today = new Date().toISOString().slice(0,10);
-    const storageKey = `${STORAGE_KEY_PREFIX}${address.replace(/[^a-z0-9@.]/gi,'_')}_${today}`;
+    
+    const today = new Date().toISOString().slice(0, 10);
+    const safeAddress = address.replace(/[^a-z0-9@.]/gi, '_');
+    const storageKey = `${STORAGE_KEY_PREFIX}${safeAddress}_${today}`;
     const lastSpin = localStorage.getItem(storageKey);
+    
     if (lastSpin) {
       return { success: false, message: "Daily limit reached! Come back tomorrow." };
     }
     
-    // Weighted random prize (server-side grade, cannot be changed by user)
+    // Weighted random prize (server-side simulation)
     let prize = 1;
     const rand = Math.random();
     if (rand < 0.70) {
-      prize = Math.floor(Math.random() * 10) + 1;   // 1-10
+      prize = Math.floor(Math.random() * 10) + 1;
     } else if (rand < 0.90) {
-      prize = Math.floor(Math.random() * 15) + 11;  // 11-25
+      prize = Math.floor(Math.random() * 15) + 11;
     } else if (rand < 0.98) {
-      prize = Math.floor(Math.random() * 15) + 26;  // 26-40
+      prize = Math.floor(Math.random() * 15) + 26;
     } else if (rand < 0.998) {
-      prize = Math.floor(Math.random() * 9) + 41;   // 41-49
+      prize = Math.floor(Math.random() * 9) + 41;
     } else {
       prize = 50;
     }
     
-    // store spin record
-    localStorage.setItem(storageKey, JSON.stringify({ prize, timestamp: Date.now(), token: crypto.randomUUID() }));
-    // return fake token for consistency
-    return { success: true, prizeSats: prize, token: crypto.randomUUID(), message: "ok" };
+    localStorage.setItem(storageKey, JSON.stringify({ prize, timestamp: Date.now() }));
+    return { success: true, prizeSats: prize };
   }
-  
 
-  // hCaptcha init
-  window.hcaptchaOnLoad = function() {
-    const container = document.getElementById('captchaContainer');
-    if (container) {
-      hcaptchaWidgetId = hcaptcha.render('captchaContainer', {
-        sitekey: 'a7725132-7912-4624-a0fe-e614b40c1a7e',
-        callback: onCaptchaSuccess,
-        'expired-callback': function() {
-          isCaptchaResolved = false;
-          statusMsgDiv.innerHTML = "⌛ Captcha expired. Please solve again.";
-          wheelSection.style.display = "none";
-        }
-      });
+  // SPIN button handler
+  centerSpinBtn.onclick = async () => {
+    if (isSpinning) {
+      statusMsgDiv.innerHTML = "⏳ Spin already in progress!";
+      return;
+    }
+    
+    if (!isAddressVerified || !isCaptchaResolved || !currentVerifiedAddress) {
+      statusMsgDiv.innerHTML = "❌ Please verify address AND solve captcha first!";
+      return;
+    }
+    
+    let captchaToken = '';
+    if (hcaptchaWidgetId !== null && typeof hcaptcha !== 'undefined' && hcaptcha.getResponse) {
+      captchaToken = hcaptcha.getResponse(hcaptchaWidgetId);
+    }
+    
+    if (!captchaToken) {
+      statusMsgDiv.innerHTML = "⚠️ Captcha expired. Please re-solve.";
+      return;
+    }
+    
+    isSpinning = true;
+    centerSpinBtn.disabled = true;
+    centerSpinBtn.innerText = "✨";
+    statusMsgDiv.innerHTML = "🌙 Processing secure spin...";
+    
+    try {
+      const spinResult = await performSecureSpin(currentVerifiedAddress, captchaToken);
+      
+      if (!spinResult.success) {
+        statusMsgDiv.innerHTML = `⚠️ ${spinResult.message}`;
+        centerSpinBtn.disabled = false;
+        centerSpinBtn.innerText = "SPIN";
+        isSpinning = false;
+        return;
+      }
+      
+      const prizeSats = spinResult.prizeSats;
+      
+      // Animate wheel to land on prize
+      const targetNumber = Math.min(50, Math.max(1, prizeSats));
+      const winningIndex = (SLICES - targetNumber) % SLICES;
+      const fullSpins = 8 + Math.floor(Math.random() * 7);
+      const extraDegrees = fullSpins * 360;
+      const stopAngle = extraDegrees - (winningIndex * SLICE_ANGLE_DEG);
+      
+      wheelCanvas.style.transform = `rotate(${stopAngle}deg)`;
+      statusMsgDiv.innerHTML = "🌀 Spinning the Moon Wheel...";
+      
+      await new Promise(res => setTimeout(res, 2800));
+      
+      giftAnimationDiv.innerHTML = `🎉 ${prizeSats} SATS! 🎉`;
+      giftAnimationDiv.classList.add('result-animation');
+      setTimeout(() => giftAnimationDiv.classList.remove('result-animation'), 600);
+      statusMsgDiv.innerHTML = `✨ You won ${prizeSats} sats! Come back tomorrow! ✨`;
+      statusMsgDiv.style.background = "#f5a62333";
+      
+      centerSpinBtn.disabled = true;
+      centerSpinBtn.innerText = "DONE";
+      
+      setTimeout(() => {
+        centerSpinBtn.disabled = false;
+        centerSpinBtn.innerText = "SPIN";
+        isSpinning = false;
+      }, 3000);
+      
+    } catch (err) {
+      console.error(err);
+      statusMsgDiv.innerHTML = "⚠️ Network error. Try again.";
+      centerSpinBtn.disabled = false;
+      centerSpinBtn.innerText = "SPIN";
+      isSpinning = false;
     }
   };
-  
-  // pre-check address if needed after captcha load
+
+  // Load ad iframe safely
   window.addEventListener('load', () => {
-    // make banner safe
     const iframeAd = document.querySelector('.ad-iframe');
     if (iframeAd) {
       iframeAd.src = "https://acceptable.a-ads.com/2436395/?size=Adaptive";
     }
-    // check local storage for demo
-    lightningInput.value = "";
-    wheelSection.style.display = "none";
+    // Redraw wheel on load to ensure visibility
+    setTimeout(() => {
+      drawWheel();
+    }, 100);
   });
   
-  // security: Disable any console override attempts (basic)
-  Object.freeze?.({});
-  
-  // additional listener to validate address when captcha solved
-  window.checkAndUnlockWheel = checkAndUnlockWheel;
-  
-  // Prevent keyboard shortcuts for devtools (basic deterrent)
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S' || e.key === 'i' || e.key === 'j')) {
-      e.preventDefault();
-    }
+  // Redraw wheel if window resizes (keeps it crisp)
+  window.addEventListener('resize', () => {
+    drawWheel();
   });
 </script>
 </body>
