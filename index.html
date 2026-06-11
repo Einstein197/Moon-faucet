@@ -119,22 +119,6 @@
       box-shadow: 0 0 8px #ffb34780;
     }
 
-    .verify-btn {
-      background: linear-gradient(95deg, #f9a826, #ffcc44);
-      border: none;
-      padding: 12px 24px;
-      border-radius: 40px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-bottom: 20px;
-      font-size: 1rem;
-      transition: transform 0.1s;
-      width: 100%;
-    }
-    .verify-btn:active {
-      transform: scale(0.97);
-    }
-
     .captcha-box {
       display: flex;
       justify-content: center;
@@ -268,15 +252,10 @@
     <h1>🌕 MOON Faucet</h1>
     <div class="sub">⚡ verify address → solve captcha → spin & win sats!</div>
     
-    <input type="text" id="lightningAddress" class="light-input" placeholder="name@domain.com" autocomplete="off">
-    <button id="verifyAddressBtn" class="verify-btn">✓ Verify Lightning Address</button>
+    <input type="text" id="lightningAddress" class="light-input" placeholder="cat@discoverlightning.org" autocomplete="off">
     
     <div id="captchaContainer" class="captcha-box"></div>
     
-    <div id="giftAnimation" class="gift-animation">✨</div>
-    <div id="statusMsg" class="status-message">🔒 Verify address & solve captcha to unlock wheel</div>
-  </div>
-
   <div class="wheel-wrapper" id="wheelSection" style="display: none;">
     <div class="wheel-relative">
       <div class="wheel-pointer">▼</div>
@@ -291,7 +270,6 @@
 <script>
   // DOM elements
   const lightningInput = document.getElementById('lightningAddress');
-  const verifyBtn = document.getElementById('verifyAddressBtn');
   const captchaContainer = document.getElementById('captchaContainer');
   const giftAnimationDiv = document.getElementById('giftAnimation');
   const statusMsgDiv = document.getElementById('statusMsg');
@@ -305,6 +283,7 @@
   let currentVerifiedAddress = null;
   let hcaptchaWidgetId = null;
   let isSpinning = false;
+  let verifyTimeout = null;
 
   // Wheel config
   const SLICES = 50;
@@ -313,9 +292,8 @@
   const CENTER_Y = 200;
   const RADIUS = 200;
 
-  // CRITICAL FIX: Properly draw the wheel with correct canvas dimensions
+  // Draw the wheel (FIXED - ensures visibility)
   function drawWheel() {
-    // Ensure canvas dimensions are set correctly
     wheelCanvas.width = 400;
     wheelCanvas.height = 400;
     
@@ -338,7 +316,7 @@
       ctx.fillStyle = i % 2 === 0 ? "#2b60ff" : "#f09d1c";
       ctx.fill();
       
-      // Add stroke for better visibility
+      // Add white stroke for separation
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 1.5;
       ctx.stroke();
@@ -355,7 +333,7 @@
       ctx.restore();
     }
     
-    // Inner circle decoration
+    // Inner circle
     ctx.beginPath();
     ctx.arc(0, 0, 45, 0, 2 * Math.PI);
     ctx.fillStyle = "#1f1a2b";
@@ -377,13 +355,71 @@
     wheelCanvas.style.transition = '';
   }
 
+  // Auto-verify Lightning address
+  async function autoVerifyAddress() {
+    const address = lightningInput.value.trim();
+    
+    if (!address || !address.includes('@')) {
+      if (isAddressVerified) {
+        isAddressVerified = false;
+        currentVerifiedAddress = null;
+        updateWheelVisibility();
+      }
+      return;
+    }
+    
+    const [name, domain] = address.split('@');
+    
+    try {
+      statusMsgDiv.innerHTML = "🔄 Verifying Lightning address...";
+      const verifyUrl = `https://ln-verify.shadowlegendcg.workers.dev?name=${name}&domain=${domain}`;
+      const res = await fetch(verifyUrl);
+      const data = await res.json();
+      
+      if (data && data.valid === true) {
+        isAddressVerified = true;
+        currentVerifiedAddress = address;
+        statusMsgDiv.innerHTML = "✅ Lightning address verified!";
+        updateWheelVisibility();
+      } else {
+        if (isAddressVerified) {
+          isAddressVerified = false;
+          currentVerifiedAddress = null;
+        }
+        statusMsgDiv.innerHTML = "❌ Lightning address not found. Please check and try again.";
+        updateWheelVisibility();
+      }
+    } catch (err) {
+      console.error("verify error", err);
+      if (isAddressVerified) {
+        isAddressVerified = false;
+        currentVerifiedAddress = null;
+      }
+      statusMsgDiv.innerHTML = "⚠️ Verification service unavailable. Try again later.";
+      updateWheelVisibility();
+    }
+  }
+
+  // Debounced auto-verify on input
+  lightningInput.addEventListener('input', () => {
+    if (verifyTimeout) clearTimeout(verifyTimeout);
+    verifyTimeout = setTimeout(() => {
+      autoVerifyAddress();
+    }, 800);
+  });
+
+  // Also verify when input loses focus
+  lightningInput.addEventListener('blur', () => {
+    if (verifyTimeout) clearTimeout(verifyTimeout);
+    autoVerifyAddress();
+  });
+
   // Check and show/hide wheel based on both conditions
   function updateWheelVisibility() {
     if (isAddressVerified && isCaptchaResolved && currentVerifiedAddress) {
       wheelSection.style.display = "flex";
       resetWheelTransform();
-      // Redraw wheel in case it got corrupted
-      drawWheel();
+      drawWheel(); // Ensure wheel is drawn when shown
       statusMsgDiv.innerHTML = "✅ Address verified + Captcha solved! Click SPIN once daily. Good luck!";
       statusMsgDiv.style.background = "#163a1fcc";
     } else if (isAddressVerified && !isCaptchaResolved) {
@@ -392,60 +428,14 @@
       statusMsgDiv.style.background = "#00000066";
     } else if (!isAddressVerified && isCaptchaResolved) {
       wheelSection.style.display = "none";
-      statusMsgDiv.innerHTML = "✅ Captcha solved! Click 'Verify Lightning Address' to unlock the wheel.";
+      statusMsgDiv.innerHTML = "✅ Captcha solved! Enter a valid Lightning address to unlock the wheel.";
       statusMsgDiv.style.background = "#00000066";
     } else {
       wheelSection.style.display = "none";
-      statusMsgDiv.innerHTML = "🔒 Verify your Lightning address AND solve captcha to spin the wheel!";
+      statusMsgDiv.innerHTML = "🔒 Enter a valid Lightning address AND solve captcha to spin the wheel!";
       statusMsgDiv.style.background = "#00000066";
     }
   }
-
-  // Lightning address verification via worker
-  async function verifyLightningAddress(address) {
-    if (!address || !address.includes('@')) {
-      return { valid: false, error: "Invalid format. Use name@domain.com" };
-    }
-    const [name, domain] = address.split('@');
-    try {
-      const verifyUrl = `https://ln-verify.shadowlegendcg.workers.dev?name=${name}&domain=${domain}`;
-      const res = await fetch(verifyUrl);
-      const data = await res.json();
-      if (data && data.valid === true) {
-        return { valid: true };
-      } else {
-        return { valid: false, error: "Lightning address not found." };
-      }
-    } catch (err) {
-      console.error("verify error", err);
-      return { valid: false, error: "Verification service unavailable. Try again." };
-    }
-  }
-
-  // Verify button click handler
-  verifyBtn.onclick = async () => {
-    const address = lightningInput.value.trim();
-    if (!address) {
-      statusMsgDiv.innerHTML = "⚠️ Please enter a Lightning address first.";
-      return;
-    }
-    
-    statusMsgDiv.innerHTML = "🔄 Verifying Lightning address...";
-    const verify = await verifyLightningAddress(address);
-    
-    if (!verify.valid) {
-      statusMsgDiv.innerHTML = `❌ ${verify.error || "Invalid Lightning address"}`;
-      isAddressVerified = false;
-      currentVerifiedAddress = null;
-      updateWheelVisibility();
-      return;
-    }
-    
-    isAddressVerified = true;
-    currentVerifiedAddress = address;
-    statusMsgDiv.innerHTML = "✅ Lightning address verified!";
-    updateWheelVisibility();
-  };
 
   // hCaptcha callbacks
   function onCaptchaSuccess() {
@@ -488,7 +478,7 @@
       return { success: false, message: "Daily limit reached! Come back tomorrow." };
     }
     
-    // Weighted random prize (server-side simulation)
+    // Weighted random prize
     let prize = 1;
     const rand = Math.random();
     if (rand < 0.70) {
@@ -583,19 +573,16 @@
     }
   };
 
-  // Load ad iframe safely
+  // Load ad iframe safely and redraw wheel
   window.addEventListener('load', () => {
     const iframeAd = document.querySelector('.ad-iframe');
     if (iframeAd) {
       iframeAd.src = "https://acceptable.a-ads.com/2436395/?size=Adaptive";
     }
-    // Redraw wheel on load to ensure visibility
-    setTimeout(() => {
-      drawWheel();
-    }, 100);
+    drawWheel();
   });
   
-  // Redraw wheel if window resizes (keeps it crisp)
+  // Redraw wheel on resize
   window.addEventListener('resize', () => {
     drawWheel();
   });
