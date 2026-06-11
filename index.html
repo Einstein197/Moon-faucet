@@ -133,12 +133,7 @@
       border-radius: 40px;
       background: #00000066;
       font-size: 0.9rem;
-    }
-
-    .gift-animation {
-      font-size: 2.2rem;
-      margin: 15px 0 5px;
-      min-height: 70px;
+      transition: all 0.3s ease;
     }
 
     .wheel-wrapper {
@@ -192,6 +187,7 @@
       cursor: pointer;
       z-index: 20;
       box-shadow: 0 0 0 4px rgba(0,0,0,0.3), 0 8px 20px black;
+      transition: transform 0.1s ease;
     }
     .spin-center-btn:active {
       transform: translate(-50%, -50%) scale(0.96);
@@ -201,28 +197,9 @@
       cursor: not-allowed;
     }
 
-    @media (max-width: 860px) {
-      .main-panel {
-        gap: 32px;
-      }
-      .wheel-relative {
-        width: 320px;
-        height: 320px;
-      }
-      .spin-center-btn {
-        width: 90px;
-        height: 90px;
-        font-size: 24px;
-      }
-      .wheel-pointer {
-        font-size: 40px;
-        top: -32px;
-      }
-    }
-    
     @keyframes fadePop {
-      0% { opacity: 0; transform: scale(0.8);}
-      100% { opacity: 1; transform: scale(1);}
+      0% { opacity: 0; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1); }
     }
     .result-animation {
       animation: fadePop 0.4s ease-out;
@@ -274,7 +251,6 @@
   // DOM elements
   const lightningInput = document.getElementById('lightningAddress');
   const captchaContainer = document.getElementById('captchaContainer');
-  const giftAnimationDiv = document.getElementById('giftAnimation');
   const statusMsgDiv = document.getElementById('statusMsg');
   const wheelSection = document.getElementById('wheelSection');
   const wheelCanvas = document.getElementById('wheelCanvas');
@@ -288,6 +264,10 @@
   let isSpinning = false;
   let verifyTimeout = null;
 
+  // Cloudflare Worker endpoints
+  const WORKER_URL = "https://spin-check.shadowlegendcg.workers.dev";
+  const VERIFY_URL = "https://ln-verify.shadowlegendcg.workers.dev";
+
   // Wheel config
   const SLICES = 50;
   const SLICE_ANGLE_DEG = 360 / SLICES;
@@ -295,7 +275,7 @@
   const CENTER_Y = 200;
   const RADIUS = 200;
 
-  // Draw the wheel (FIXED - ensures visibility)
+  // Draw the wheel
   function drawWheel() {
     wheelCanvas.width = 400;
     wheelCanvas.height = 400;
@@ -315,11 +295,9 @@
       ctx.moveTo(0, 0);
       ctx.arc(0, 0, RADIUS, startAngle, endAngle);
       
-      // Alternating vibrant colors
       ctx.fillStyle = i % 2 === 0 ? "#2b60ff" : "#f09d1c";
       ctx.fill();
       
-      // Add white stroke for separation
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 1.5;
       ctx.stroke();
@@ -330,7 +308,6 @@
       ctx.textAlign = "right";
       ctx.fillStyle = "#ffffff";
       ctx.font = "bold 18px 'Segoe UI', 'Arial'";
-      ctx.shadowBlur = 0;
       const labelNumber = ((SLICES - i - 1 + SLICES) % SLICES) + 1;
       ctx.fillText(labelNumber.toString(), RADIUS - 20, 8);
       ctx.restore();
@@ -348,7 +325,6 @@
     ctx.restore();
   }
 
-  // Initial draw
   drawWheel();
 
   function resetWheelTransform() {
@@ -358,7 +334,7 @@
     wheelCanvas.style.transition = '';
   }
 
-  // Auto-verify Lightning address
+  // Auto-verify Lightning address using Cloudflare Worker
   async function autoVerifyAddress() {
     const address = lightningInput.value.trim();
     
@@ -375,7 +351,7 @@
     
     try {
       statusMsgDiv.innerHTML = "🔄 Verifying Lightning address...";
-      const verifyUrl = `https://ln-verify.shadowlegendcg.workers.dev?name=${name}&domain=${domain}`;
+      const verifyUrl = `${VERIFY_URL}?name=${name}&domain=${domain}`;
       const res = await fetch(verifyUrl);
       const data = await res.json();
       
@@ -403,7 +379,6 @@
     }
   }
 
-  // Debounced auto-verify on input
   lightningInput.addEventListener('input', () => {
     if (verifyTimeout) clearTimeout(verifyTimeout);
     verifyTimeout = setTimeout(() => {
@@ -411,18 +386,16 @@
     }, 800);
   });
 
-  // Also verify when input loses focus
   lightningInput.addEventListener('blur', () => {
     if (verifyTimeout) clearTimeout(verifyTimeout);
     autoVerifyAddress();
   });
 
-  // Check and show/hide wheel based on both conditions
   function updateWheelVisibility() {
     if (isAddressVerified && isCaptchaResolved && currentVerifiedAddress) {
       wheelSection.style.display = "flex";
       resetWheelTransform();
-      drawWheel(); // Ensure wheel is drawn when shown
+      drawWheel();
       statusMsgDiv.innerHTML = "✅ Address verified + Captcha solved! Click SPIN once daily. Good luck!";
       statusMsgDiv.style.background = "#163a1fcc";
     } else if (isAddressVerified && !isCaptchaResolved) {
@@ -440,7 +413,6 @@
     }
   }
 
-  // hCaptcha callbacks
   function onCaptchaSuccess() {
     if (isCaptchaResolved) return;
     isCaptchaResolved = true;
@@ -464,40 +436,30 @@
     }
   };
 
-  // Secure spin with daily limit (localStorage per address)
-  const STORAGE_KEY_PREFIX = "moon_faucet_spin_";
-
+  // SECURE SPIN with Cloudflare Worker & KV storage for daily limit
   async function performSecureSpin(address, captchaToken) {
     if (!captchaToken || captchaToken.length < 5) {
       return { success: false, message: "Captcha validation failed" };
     }
     
-    const today = new Date().toISOString().slice(0, 10);
-    const safeAddress = address.replace(/[^a-z0-9@.]/gi, '_');
-    const storageKey = `${STORAGE_KEY_PREFIX}${safeAddress}_${today}`;
-    const lastSpin = localStorage.getItem(storageKey);
-    
-    if (lastSpin) {
-      return { success: false, message: "Daily limit reached! Come back tomorrow." };
+    try {
+      // Call the Cloudflare Worker that checks KV for daily limit
+      // The worker returns { allowed: true/false, prizeSats: number (if allowed) }
+      const spinUrl = `${WORKER_URL}/spin?address=${encodeURIComponent(address)}&captcha=${captchaToken}`;
+      const res = await fetch(spinUrl);
+      const data = await res.json();
+      
+      if (!data.allowed) {
+        return { success: false, message: data.message || "Daily limit reached! Come back tomorrow." };
+      }
+      
+      // Worker returns the prize determined server-side (weighted)
+      return { success: true, prizeSats: data.prizeSats };
+      
+    } catch (err) {
+      console.error("Spin error:", err);
+      return { success: false, message: "Could not verify spin limit. Try again later." };
     }
-    
-    // Weighted random prize
-    let prize = 1;
-    const rand = Math.random();
-    if (rand < 0.70) {
-      prize = Math.floor(Math.random() * 10) + 1;
-    } else if (rand < 0.90) {
-      prize = Math.floor(Math.random() * 15) + 11;
-    } else if (rand < 0.98) {
-      prize = Math.floor(Math.random() * 15) + 26;
-    } else if (rand < 0.998) {
-      prize = Math.floor(Math.random() * 9) + 41;
-    } else {
-      prize = 50;
-    }
-    
-    localStorage.setItem(storageKey, JSON.stringify({ prize, timestamp: Date.now() }));
-    return { success: true, prizeSats: prize };
   }
 
   // SPIN button handler
@@ -525,7 +487,7 @@
     isSpinning = true;
     centerSpinBtn.disabled = true;
     centerSpinBtn.innerText = "✨";
-    statusMsgDiv.innerHTML = "🌙 Processing secure spin...";
+    statusMsgDiv.innerHTML = "🌙 Checking daily limit & processing spin...";
     
     try {
       const spinResult = await performSecureSpin(currentVerifiedAddress, captchaToken);
@@ -552,10 +514,9 @@
       
       await new Promise(res => setTimeout(res, 2800));
       
-      giftAnimationDiv.innerHTML = `🎉 ${prizeSats} SATS! 🎉`;
-      giftAnimationDiv.classList.add('result-animation');
-      setTimeout(() => giftAnimationDiv.classList.remove('result-animation'), 600);
-      statusMsgDiv.innerHTML = `You won ${prizeSats} sats! Come back tomorrow!`;
+      statusMsgDiv.innerHTML = `🎉✨ YOU WON ${prizeSats} SATS! ✨🎉`;
+      statusMsgDiv.classList.add('result-animation');
+      setTimeout(() => statusMsgDiv.classList.remove('result-animation'), 600);
       statusMsgDiv.style.background = "#f5a62333";
       
       centerSpinBtn.disabled = true;
@@ -585,7 +546,6 @@
     drawWheel();
   });
   
-  // Redraw wheel on resize
   window.addEventListener('resize', () => {
     drawWheel();
   });
