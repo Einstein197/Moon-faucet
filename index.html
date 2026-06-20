@@ -264,7 +264,23 @@
       transform: scale(1.2);
     }
 
-    /* Removed status-message styles */
+    /* Status Message on Main Card */
+    .status-message {
+      margin: 24px 0 0;
+      font-weight: 600;
+      padding: 22px 28px;
+      border-radius: 40px;
+      background: #000000aa;
+      color: #ffffff;
+      font-size: 1.15rem;
+      transition: all 0.3s ease;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      line-height: 1.5;
+      min-height: 75px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
     /* Wheel Overlay */
     .wheel-overlay {
@@ -376,23 +392,6 @@
       background: rgba(255, 255, 255, 0.15);
       color: #ffffff;
       transform: scale(1.1);
-    }
-
-    .wheel-overlay .wheel-status {
-      margin-top: 18px;
-      font-weight: 500;
-      padding: 14px 24px;
-      border-radius: 40px;
-      background: #000000aa;
-      color: #ffffff;
-      font-size: 1.05rem;
-      text-align: center;
-      max-width: 90%;
-      min-height: 55px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     /* Popup Overlay for Daily Limit */
@@ -528,6 +527,11 @@
       .light-input::placeholder {
         font-size: 1rem;
       }
+      .status-message {
+        font-size: 0.95rem;
+        padding: 16px 20px;
+        min-height: 60px;
+      }
       .wheel-overlay .wheel-relative {
         width: 260px;
         height: 260px;
@@ -559,11 +563,6 @@
         padding: 6px 12px;
         top: 12px;
         right: 16px;
-      }
-      .wheel-overlay .wheel-status {
-        font-size: 0.9rem;
-        padding: 12px 16px;
-        min-height: 48px;
       }
       .popup-box {
         padding: 32px 24px;
@@ -665,9 +664,11 @@
       </div>
       
       <div id="captchaContainer" class="captcha-box"></div>
+      
+      <div id="statusMsg" class="status-message">🔒 Enter Lightning address & solve captcha to unlock wheel</div>
     </div>
 
-    <!-- Wheel Overlay -->
+    <!-- Wheel Overlay (no status message inside) -->
     <div class="wheel-overlay" id="wheelOverlay">
       <button class="close-wheel-btn" id="closeWheelBtn">✕</button>
       <div class="wheel-relative">
@@ -675,7 +676,6 @@
         <canvas id="wheelCanvas" width="400" height="400"></canvas>
         <button id="centerSpinBtn" class="spin-center-btn">SPIN</button>
       </div>
-      <div class="wheel-status" id="wheelStatus">🎯 Ready to spin! Click SPIN to win sats!</div>
     </div>
   </div>
 </div>
@@ -684,10 +684,10 @@
   // DOM elements
   const lightningInput = document.getElementById('lightningAddress');
   const captchaContainer = document.getElementById('captchaContainer');
+  const statusMsgDiv = document.getElementById('statusMsg');
   const wheelOverlay = document.getElementById('wheelOverlay');
   const wheelCanvas = document.getElementById('wheelCanvas');
   const centerSpinBtn = document.getElementById('centerSpinBtn');
-  const wheelStatus = document.getElementById('wheelStatus');
   const closeWheelBtn = document.getElementById('closeWheelBtn');
   const cardContent = document.getElementById('cardContent');
   const testModeBanner = document.getElementById('testModeBanner');
@@ -778,20 +778,12 @@
       isTestMode = true;
       testModeBanner.classList.add('active');
       passwordModal.classList.remove('active');
-      // Update wheel status if visible
-      if (wheelOverlay.classList.contains('active')) {
-        wheelStatus.innerHTML = "🔐 TEST MODE ACTIVE — Unlimited spins, no limits! 🔐";
-        wheelStatus.style.background = "#663300cc";
-        wheelStatus.style.borderColor = "rgba(255,51,102,0.3)";
-      }
+      statusMsgDiv.innerHTML = "🔐 TEST MODE ACTIVE — Unlimited spins, no limits! 🔐";
+      statusMsgDiv.style.background = "#663300cc";
       
       setTimeout(() => {
         if (isAddressVerified && isCaptchaResolved && currentVerifiedAddress) {
-          if (wheelOverlay.classList.contains('active')) {
-            wheelStatus.innerHTML = "🔐 TEST MODE: Unlimited spins! Click SPIN as many times as you want 🔐";
-            wheelStatus.style.background = "#663300cc";
-            wheelStatus.style.borderColor = "rgba(255,51,102,0.3)";
-          }
+          statusMsgDiv.innerHTML = "🔐 TEST MODE: Unlimited spins! Click SPIN as many times as you want 🔐";
         }
         updateWheelVisibility();
       }, 1000);
@@ -837,6 +829,8 @@
   closeWheelBtn.addEventListener('click', () => {
     wheelOverlay.classList.remove('active');
     cardContent.classList.remove('hidden');
+    statusMsgDiv.innerHTML = "🔒 Enter Lightning address & solve captcha to unlock wheel";
+    statusMsgDiv.style.background = "#000000aa";
   });
 
   // ==================== CLOUDFLARE WORKER ENDPOINTS ====================
@@ -953,11 +947,7 @@
     }
     
     try {
-      // Show status in wheel if active, otherwise no status shown
-      if (wheelOverlay.classList.contains('active')) {
-        wheelStatus.innerHTML = "🔄 Verifying Lightning address...";
-      }
-      
+      statusMsgDiv.innerHTML = "🔄 Verifying Lightning address...";
       const verifyUrl = `${VERIFY_URL}?name=${encodeURIComponent(name)}&domain=${encodeURIComponent(domain)}`;
       const res = await fetch(verifyUrl);
       const data = await res.json();
@@ -965,17 +955,14 @@
       if (data && data.valid === true) {
         isAddressVerified = true;
         currentVerifiedAddress = address.toLowerCase();
+        statusMsgDiv.innerHTML = "✅ Lightning address verified!";
         updateWheelVisibility();
       } else {
         if (isAddressVerified) {
           isAddressVerified = false;
           currentVerifiedAddress = null;
         }
-        if (wheelOverlay.classList.contains('active')) {
-          wheelStatus.innerHTML = "❌ Lightning address not found. Please check and try again.";
-          wheelStatus.style.background = "#661111aa";
-          wheelStatus.style.borderColor = "rgba(255,0,0,0.3)";
-        }
+        statusMsgDiv.innerHTML = "❌ Lightning address not found. Please check and try again.";
         updateWheelVisibility();
       }
     } catch (err) {
@@ -984,11 +971,7 @@
         isAddressVerified = false;
         currentVerifiedAddress = null;
       }
-      if (wheelOverlay.classList.contains('active')) {
-        wheelStatus.innerHTML = "⚠️ Verification service unavailable. Try again later.";
-        wheelStatus.style.background = "#663300aa";
-        wheelStatus.style.borderColor = "rgba(255,165,0,0.3)";
-      }
+      statusMsgDiv.innerHTML = "⚠️ Verification service unavailable. Try again later.";
       updateWheelVisibility();
     }
   }
@@ -1010,18 +993,26 @@
       resetWheelTransform();
       drawWheel();
       if (isTestMode) {
-        wheelStatus.innerHTML = "🔐 TEST MODE: Unlimited spins! Click SPIN as many times as you want 🔐";
-        wheelStatus.style.background = "#663300cc";
-        wheelStatus.style.borderColor = "rgba(255,51,102,0.3)";
+        statusMsgDiv.innerHTML = "🔐 TEST MODE: Unlimited spins! Click SPIN as many times as you want 🔐";
+        statusMsgDiv.style.background = "#663300cc";
       } else {
-        wheelStatus.innerHTML = "✅ Address verified + Captcha solved! Click SPIN once daily. Good luck!";
-        wheelStatus.style.background = "#163a1fcc";
-        wheelStatus.style.borderColor = "rgba(74,222,128,0.2)";
+        statusMsgDiv.innerHTML = "✅ Address verified + Captcha solved! Click SPIN once daily. Good luck!";
+        statusMsgDiv.style.background = "#163a1fcc";
       }
     } else {
       wheelOverlay.classList.remove('active');
       cardContent.classList.remove('hidden');
-      // No status message shown on the card anymore
+      
+      if (isAddressVerified && !isCaptchaResolved) {
+        statusMsgDiv.innerHTML = "🔐 Address verified! Now solve the hCaptcha to unlock the wheel.";
+        statusMsgDiv.style.background = "#000000aa";
+      } else if (!isAddressVerified && isCaptchaResolved) {
+        statusMsgDiv.innerHTML = "✅ Captcha solved! Enter a valid Lightning address to unlock the wheel.";
+        statusMsgDiv.style.background = "#000000aa";
+      } else {
+        statusMsgDiv.innerHTML = "🔒 Enter a valid Lightning address AND solve captcha to spin the wheel!";
+        statusMsgDiv.style.background = "#000000aa";
+      }
     }
   }
 
@@ -1029,16 +1020,13 @@
   function onCaptchaSuccess() {
     if (isCaptchaResolved) return;
     isCaptchaResolved = true;
+    statusMsgDiv.innerHTML = "✅ Captcha solved!";
     updateWheelVisibility();
   }
 
   function onCaptchaExpired() {
     isCaptchaResolved = false;
-    if (wheelOverlay.classList.contains('active')) {
-      wheelStatus.innerHTML = "⌛ Captcha expired. Please solve again.";
-      wheelStatus.style.background = "#663300aa";
-      wheelStatus.style.borderColor = "rgba(255,165,0,0.3)";
-    }
+    statusMsgDiv.innerHTML = "⌛ Captcha expired. Please solve again.";
     updateWheelVisibility();
   }
 
@@ -1055,12 +1043,12 @@
   // ==================== SPIN BUTTON ====================
   centerSpinBtn.onclick = async () => {
     if (isSpinning) {
-      wheelStatus.innerHTML = "⏳ Spin already in progress!";
+      statusMsgDiv.innerHTML = "⏳ Spin already in progress!";
       return;
     }
     
     if (!isAddressVerified || !isCaptchaResolved || !currentVerifiedAddress) {
-      wheelStatus.innerHTML = "❌ Please verify address AND solve captcha first!";
+      statusMsgDiv.innerHTML = "❌ Please verify address AND solve captcha first!";
       return;
     }
     
@@ -1070,7 +1058,7 @@
     }
     
     if (!captchaToken && !isTestMode) {
-      wheelStatus.innerHTML = "⚠️ Captcha expired. Please re-solve.";
+      statusMsgDiv.innerHTML = "⚠️ Captcha expired. Please re-solve.";
       return;
     }
     
@@ -1078,9 +1066,9 @@
     centerSpinBtn.disabled = true;
     
     if (isTestMode) {
-      wheelStatus.innerHTML = "🔐 TEST MODE: Spinning with no limits... 🔐";
+      statusMsgDiv.innerHTML = "🔐 TEST MODE: Spinning with no limits... 🔐";
     } else {
-      wheelStatus.innerHTML = "🌙 Checking daily limit with Cloudflare KV...";
+      statusMsgDiv.innerHTML = "🌙 Checking daily limit with Cloudflare KV...";
     }
     
     try {
@@ -1108,7 +1096,7 @@
         prizeSats = checkData.prizeSats || generatePrize();
       } else {
         prizeSats = generatePrize();
-        wheelStatus.innerHTML = "🔐 TEST SPIN — No sats will be sent, no limits applied 🔐";
+        statusMsgDiv.innerHTML = "🔐 TEST SPIN — No sats will be sent, no limits applied 🔐";
         await new Promise(res => setTimeout(res, 500));
       }
       
@@ -1119,21 +1107,19 @@
       const stopAngle = extraDegrees - (winningIndex * SLICE_ANGLE_DEG);
       
       wheelCanvas.style.transform = `rotate(${stopAngle}deg)`;
-      wheelStatus.innerHTML = "🌀 Spinning the Moon Wheel...";
+      statusMsgDiv.innerHTML = "🌀 Spinning the Moon Wheel...";
       
       await new Promise(res => setTimeout(res, 2800));
       
       if (isTestMode) {
-        wheelStatus.innerHTML = `🔐🔐🔐 TEST SPIN: You would have won ${prizeSats} SATS! (No sats awarded) 🔐🔐🔐`;
-        wheelStatus.style.background = "#663300cc";
-        wheelStatus.style.borderColor = "rgba(255,51,102,0.3)";
+        statusMsgDiv.innerHTML = `🔐🔐🔐 TEST SPIN: You would have won ${prizeSats} SATS! (No sats awarded) 🔐🔐🔐`;
+        statusMsgDiv.style.background = "#663300cc";
       } else {
-        wheelStatus.innerHTML = `🎉✨ YOU WON ${prizeSats} SATS! ✨🎉`;
-        wheelStatus.style.background = "#f5a62333";
-        wheelStatus.style.borderColor = "rgba(255,215,0,0.3)";
+        statusMsgDiv.innerHTML = `🎉✨ YOU WON ${prizeSats} SATS! ✨🎉`;
+        statusMsgDiv.style.background = "#f5a62333";
       }
-      wheelStatus.classList.add('result-animation');
-      setTimeout(() => wheelStatus.classList.remove('result-animation'), 600);
+      statusMsgDiv.classList.add('result-animation');
+      setTimeout(() => statusMsgDiv.classList.remove('result-animation'), 600);
       
       centerSpinBtn.disabled = true;
       centerSpinBtn.innerText = "DONE";
@@ -1143,19 +1129,17 @@
         centerSpinBtn.innerText = "SPIN";
         isSpinning = false;
         if (isTestMode) {
-          wheelStatus.innerHTML = "🔐 TEST MODE: Click SPIN again for another test spin!";
-          wheelStatus.style.background = "#663300cc";
-          wheelStatus.style.borderColor = "rgba(255,51,102,0.3)";
+          statusMsgDiv.innerHTML = "🔐 TEST MODE: Click SPIN again for another test spin!";
+          statusMsgDiv.style.background = "#663300cc";
         } else {
-          wheelStatus.innerHTML = "✅ Spin complete! Click SPIN again tomorrow for more sats!";
-          wheelStatus.style.background = "#163a1fcc";
-          wheelStatus.style.borderColor = "rgba(74,222,128,0.2)";
+          statusMsgDiv.innerHTML = "✅ Spin complete! Click SPIN again tomorrow for more sats!";
+          statusMsgDiv.style.background = "#163a1fcc";
         }
       }, 3000);
       
     } catch (err) {
       console.error(err);
-      wheelStatus.innerHTML = "⚠️ Network error. Try again.";
+      statusMsgDiv.innerHTML = "⚠️ Network error. Try again.";
       centerSpinBtn.disabled = false;
       centerSpinBtn.innerText = "SPIN";
       isSpinning = false;
