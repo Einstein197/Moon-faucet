@@ -772,9 +772,6 @@
 
     function closeModal(id) { var el = document.getElementById(id); if (el) el.classList.remove('open'); }
 
-    function overlayClose(e, id) { if (e.target === e.currentTarget) closeModal(id); }
-
-    // Close modal on overlay click
     document.querySelectorAll('.modal-overlay').forEach(function(m) {
       m.addEventListener('click', function(e) {
         if (e.target === this) {
@@ -806,6 +803,7 @@
       setTimeout(function() { setProgress(70); }, 300);
       setTimeout(function() { setProgress(100); }, 600);
       toast('🔄 Refreshed!', 'info');
+      loadUserData();
     }
 
     // ==================== FAUCET LOGIC ====================
@@ -839,42 +837,45 @@
     let isTestMode = false;
     let popupTimeout = null;
     let resultTimeout = null;
-    let totalEarned = parseInt(localStorage.getItem('moonTotalEarned')) || 0;
-    let spinsToday = parseInt(localStorage.getItem('moonSpinsToday')) || 0;
-    let lastSpinDate = localStorage.getItem('moonLastSpinDate') || '';
 
-    // Update stats
-    function updateStats() {
-      totalEarnedEl.textContent = totalEarned;
-      spinsTodayEl.textContent = spinsToday;
-    }
+    // ==================== CLOUDFLARE WORKER ENDPOINTS ====================
+    const API_URL = "https://spin-check.shadowlegendcg.workers.dev";
+    const VERIFY_URL = "https://ln-verify.shadowlegendcg.workers.dev";
 
-    // Check if new day
-    function checkNewDay() {
-      const today = new Date().toDateString();
-      if (lastSpinDate !== today) {
-        spinsToday = 0;
-        localStorage.setItem('moonSpinsToday', '0');
-        localStorage.setItem('moonLastSpinDate', today);
-        updateStats();
+    // ==================== LOAD USER DATA FROM DATABASE ====================
+    async function loadUserData() {
+      const address = lightningInput.value.trim();
+      if (!address || !address.includes('@')) {
+        // Show placeholder stats if no address
+        totalEarnedEl.textContent = '--';
+        spinsTodayEl.textContent = '--';
+        return;
+      }
+
+      try {
+        const response = await fetch(API_URL + '/user?address=' + encodeURIComponent(address));
+        const data = await response.json();
+        
+        if (data && data.success) {
+          totalEarnedEl.textContent = data.totalEarned || 0;
+          spinsTodayEl.textContent = data.spinsToday || 0;
+        } else {
+          totalEarnedEl.textContent = '0';
+          spinsTodayEl.textContent = '0';
+        }
+      } catch (err) {
+        console.error('Error loading user data:', err);
+        totalEarnedEl.textContent = '?';
+        spinsTodayEl.textContent = '?';
       }
     }
 
-    // Add earned sats
-    function addEarned(amount) {
-      totalEarned += amount;
-      spinsToday += 1;
-      localStorage.setItem('moonTotalEarned', String(totalEarned));
-      localStorage.setItem('moonSpinsToday', String(spinsToday));
-      localStorage.setItem('moonLastSpinDate', new Date().toDateString());
-      updateStats();
-    }
-
-    // ==================== LOCAL STORAGE ====================
+    // ==================== LOCAL STORAGE (UI ONLY) ====================
     function saveAddress(address) {
       if (address && address.includes('@')) {
         localStorage.setItem('moonFaucetAddress', address);
         showClearButton(true);
+        loadUserData(); // Load stats from database
       }
     }
 
@@ -890,6 +891,8 @@
       lightningInput.focus();
       isAddressVerified = false;
       currentVerifiedAddress = null;
+      totalEarnedEl.textContent = '0';
+      spinsTodayEl.textContent = '0';
       updateWheelVisibility();
       toast('Address cleared', 'info');
     }
@@ -939,7 +942,6 @@
     // ==================== TEST MODE ====================
     function toggleTestMode(checked) {
       if (checked) {
-        // Try to unlock via password modal
         openModal('passwordModal');
         testModeToggle.checked = false;
       } else {
@@ -952,7 +954,6 @@
       }
     }
 
-    // Keyboard shortcut: Press 'T' three times quickly
     let tPressCount = 0;
     let tPressTimeout = null;
     const TEST_MODE_PASSWORD = "moondev2024";
@@ -972,7 +973,6 @@
       }
     });
 
-    // Unlock test mode
     document.getElementById('unlockTestBtn').addEventListener('click', function() {
       const enteredPassword = document.getElementById('testModePassword').value;
       if (enteredPassword === TEST_MODE_PASSWORD) {
@@ -1006,10 +1006,6 @@
         document.getElementById('unlockTestBtn').click();
       }
     });
-
-    // ==================== CLOUDFLARE WORKER ====================
-    const SPIN_CHECK_URL = "https://spin-check.shadowlegendcg.workers.dev/spin-check";
-    const VERIFY_URL = "https://ln-verify.shadowlegendcg.workers.dev";
 
     // ==================== PRIZE GENERATION ====================
     function generatePrize() {
@@ -1106,6 +1102,8 @@
           isAddressVerified = true;
           currentVerifiedAddress = address.toLowerCase();
           statusMsgDiv.innerHTML = "✅ Lightning address verified!";
+          // Load user data from database
+          await loadUserData();
           updateWheelVisibility();
         } else {
           if (isAddressVerified) { isAddressVerified = false;
@@ -1214,11 +1212,20 @@
         return;
       }
 
-      // Check daily limit (unless test mode)
+      // Check daily limit via database (unless test mode)
       if (!isTestMode) {
-        checkNewDay();
-        if (spinsToday >= 1) {
-          showWheelPopup();
+        try {
+          const checkUrl = API_URL + '/check?address=' + encodeURIComponent(currentVerifiedAddress);
+          const checkRes = await fetch(checkUrl);
+          const checkData = await checkRes.json();
+          
+          if (!checkData.allowed) {
+            showWheelPopup();
+            return;
+          }
+        } catch (err) {
+          console.error('Error checking limit:', err);
+          statusMsgDiv.innerHTML = "⚠️ Could not check limit. Try again.";
           return;
         }
       }
@@ -1238,25 +1245,38 @@
       if (isTestMode) {
         statusMsgDiv.innerHTML = "🔐 TEST MODE: Spinning with no limits... 🔐";
       } else {
-        statusMsgDiv.innerHTML = "🌙 Checking daily limit with Cloudflare KV...";
+        statusMsgDiv.innerHTML = "🌙 Processing your spin...";
       }
 
       try {
         let prizeSats;
 
         if (!isTestMode) {
-          const checkUrl = SPIN_CHECK_URL + '?address=' + encodeURIComponent(currentVerifiedAddress);
-          const checkRes = await fetch(checkUrl);
-          const checkData = await checkRes.json();
-
-          if (!checkData.allowed) {
-            showWheelPopup();
-            centerSpinBtn.disabled = false;
-            centerSpinBtn.innerText = "SPIN";
-            isSpinning = false;
-            return;
+          // Submit spin to database
+          const spinResponse = await fetch(API_URL + '/spin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              address: currentVerifiedAddress,
+              captcha: captchaToken
+            })
+          });
+          const spinData = await spinResponse.json();
+          
+          if (!spinData.success) {
+            if (spinData.message === 'Limit reached') {
+              showWheelPopup();
+              centerSpinBtn.disabled = false;
+              centerSpinBtn.innerText = "SPIN";
+              isSpinning = false;
+              return;
+            }
+            throw new Error(spinData.message || 'Spin failed');
           }
-          prizeSats = checkData.prizeSats || generatePrize();
+          
+          prizeSats = spinData.prize || generatePrize();
+          // Update stats from database
+          await loadUserData();
         } else {
           prizeSats = generatePrize();
           statusMsgDiv.innerHTML = "🔐 TEST SPIN — No sats will be sent, no limits applied 🔐";
@@ -1286,8 +1306,6 @@
           statusMsgDiv.style.background = "rgba(255,51,102,0.15)";
           statusMsgDiv.style.borderColor = "rgba(255,51,102,0.3)";
         } else {
-          // Add to stats
-          addEarned(prizeSats);
           showWheelResult(
             '🎉',
             'YOU WON ' + prizeSats + ' SATS!',
@@ -1298,6 +1316,8 @@
           statusMsgDiv.style.background = "rgba(255,215,0,0.1)";
           statusMsgDiv.style.borderColor = "rgba(255,215,0,0.2)";
           toast('🎉 You won ' + prizeSats + ' sats!', 'success');
+          // Refresh stats
+          await loadUserData();
         }
         statusMsgDiv.classList.add('result-animation');
         setTimeout(function() { statusMsgDiv.classList.remove('result-animation'); }, 600);
@@ -1322,7 +1342,7 @@
 
       } catch (err) {
         console.error(err);
-        statusMsgDiv.innerHTML = "⚠️ Network error. Try again.";
+        statusMsgDiv.innerHTML = "⚠️ " + (err.message || 'Network error. Try again.');
         centerSpinBtn.disabled = false;
         centerSpinBtn.innerText = "SPIN";
         isSpinning = false;
@@ -1343,12 +1363,10 @@
       if (savedAddress) {
         lightningInput.value = savedAddress;
         showClearButton(true);
-        setTimeout(autoVerifyAddress, 500);
+        setTimeout(function() {
+          autoVerifyAddress();
+        }, 500);
       }
-
-      // Update stats
-      checkNewDay();
-      updateStats();
 
       // Draw wheel
       drawWheel();
