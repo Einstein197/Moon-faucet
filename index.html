@@ -176,6 +176,29 @@
       min-height: 500px;
     }
 
+    /* Header with moon image */
+    .header-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .header-title img {
+      width: 48px;
+      height: 48px;
+      vertical-align: middle;
+    }
+
+    .header-title h1 {
+      color: #ffffff;
+      background: none;
+      -webkit-text-fill-color: #ffffff;
+      font-size: 3.2rem;
+      margin: 0;
+    }
+
     /* Input wrapper for clear button */
     .input-wrapper {
       position: relative;
@@ -501,8 +524,12 @@
         font-size: 46px;
         top: -36px;
       }
-      h1 {
+      .header-title h1 {
         font-size: 2.8rem;
+      }
+      .header-title img {
+        width: 40px;
+        height: 40px;
       }
       .banner-link, .ad-frame, .test-mode-banner {
         max-width: 100%;
@@ -538,8 +565,15 @@
         border-radius: 32px;
         min-height: 360px;
       }
-      h1 {
+      .header-title h1 {
         font-size: 2.2rem;
+      }
+      .header-title img {
+        width: 32px;
+        height: 32px;
+      }
+      .header-title {
+        gap: 8px;
       }
       .sub {
         font-size: 1rem;
@@ -638,8 +672,12 @@
         font-size: 26px;
         top: -22px;
       }
-      h1 {
+      .header-title h1 {
         font-size: 1.8rem;
+      }
+      .header-title img {
+        width: 28px;
+        height: 28px;
       }
       .card {
         padding: 20px 16px;
@@ -707,7 +745,10 @@
   <div class="card" id="mainCard">
     <!-- Card Content -->
     <div class="card-content" id="cardContent">
-      <h1 style="color: #ffffff; background: none; -webkit-text-fill-color: #ffffff;">🌕 MOON Faucet</h1>
+      <div class="header-title">
+        <img src="moon.png" alt="Moon">
+        <h1>MOON Faucet</h1>
+      </div>
       <div class="sub" style="color: #ffffff; margin-bottom: 40px;">⚡ verify address → solve captcha → spin & win sats!</div>
       
       <div class="input-wrapper">
