@@ -1088,11 +1088,7 @@
     isSpinning = true;
     centerSpinBtn.disabled = true;
     
-    if (isTestMode) {
-      wheelStatus.innerHTML = "🔐 TEST MODE: Spinning with no limits... 🔐";
-    } else {
-      wheelStatus.innerHTML = "🌙 Checking daily limit with Cloudflare KV...";
-    }
+
     
     try {
       let prizeSats;
