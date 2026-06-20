@@ -176,6 +176,38 @@
       min-height: 500px;
     }
 
+    /* Saved Address Indicator */
+    .saved-indicator {
+      display: none;
+      font-size: 0.85rem;
+      color: #4ade80;
+      margin-top: -16px;
+      margin-bottom: 16px;
+      text-align: left;
+      padding: 0 4px;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .saved-indicator.show {
+      display: flex;
+    }
+
+    .saved-indicator .clear-btn {
+      background: none;
+      border: none;
+      color: #ff3366;
+      cursor: pointer;
+      font-size: 0.8rem;
+      text-decoration: underline;
+      font-family: 'Segoe UI', 'Poppins', sans-serif;
+      padding: 0 4px;
+    }
+
+    .saved-indicator .clear-btn:hover {
+      color: #ff6633;
+    }
+
     .card-content {
       transition: opacity 0.4s ease;
     }
@@ -249,7 +281,7 @@
       justify-content: center;
     }
 
-    /* Wheel Overlay - full size overlay */
+    /* Wheel Overlay */
     .wheel-overlay {
       position: absolute;
       top: 0;
@@ -570,6 +602,9 @@
         padding: 12px 32px;
         font-size: 1rem;
       }
+      .saved-indicator {
+        font-size: 0.75rem;
+      }
     }
 
     @media (max-width: 380px) {
@@ -644,6 +679,11 @@
       
       <input type="text" id="lightningAddress" class="light-input" placeholder="cat@discoverlightning.org" autocomplete="off">
       
+      <div class="saved-indicator" id="savedIndicator">
+        💾 Saved: <span id="savedAddressDisplay"></span>
+        <button class="clear-btn" id="clearSavedBtn">(clear)</button>
+      </div>
+      
       <div id="captchaContainer" class="captcha-box"></div>
       
       <div id="statusMsg" class="status-message">🔒 Enter Lightning address & solve captcha to unlock wheel</div>
@@ -682,6 +722,9 @@
   const limitPopup = document.getElementById('limitPopup');
   const popupMessage = document.getElementById('popupMessage');
   const popupCloseBtn = document.getElementById('popupCloseBtn');
+  const savedIndicator = document.getElementById('savedIndicator');
+  const savedAddressDisplay = document.getElementById('savedAddressDisplay');
+  const clearSavedBtn = document.getElementById('clearSavedBtn');
 
   // State
   let isCaptchaResolved = false;
@@ -698,7 +741,39 @@
   // Password for test mode
   const TEST_MODE_PASSWORD = "moondev2024";
 
-  // Keyboard shortcut detection
+  // ==================== LOCAL STORAGE FUNCTIONS ====================
+  function saveAddress(address) {
+    if (address && address.includes('@')) {
+      localStorage.setItem('moonFaucetAddress', address);
+      showSavedIndicator(address);
+    }
+  }
+
+  function getSavedAddress() {
+    return localStorage.getItem('moonFaucetAddress') || '';
+  }
+
+  function clearSavedAddress() {
+    localStorage.removeItem('moonFaucetAddress');
+    savedIndicator.classList.remove('show');
+    lightningInput.value = '';
+    lightningInput.focus();
+    // Reset verification state
+    isAddressVerified = false;
+    currentVerifiedAddress = null;
+    updateWheelVisibility();
+  }
+
+  function showSavedIndicator(address) {
+    if (address && address.includes('@')) {
+      savedAddressDisplay.textContent = address;
+      savedIndicator.classList.add('show');
+    } else {
+      savedIndicator.classList.remove('show');
+    }
+  }
+
+  // ==================== KEYBOARD SHORTCUTS ====================
   document.addEventListener('keydown', (e) => {
     if (e.key === 't' || e.key === 'T') {
       e.preventDefault();
@@ -719,7 +794,7 @@
     }
   });
 
-  // Unlock test mode
+  // ==================== UNLOCK TEST MODE ====================
   unlockTestBtn.addEventListener('click', () => {
     const enteredPassword = testModePassword.value;
     if (enteredPassword === TEST_MODE_PASSWORD) {
@@ -759,29 +834,31 @@
     }
   });
 
-  // Close popup
+  // ==================== CLEAR SAVED ADDRESS ====================
+  clearSavedBtn.addEventListener('click', clearSavedAddress);
+
+  // ==================== POPUP ====================
   popupCloseBtn.addEventListener('click', () => {
     limitPopup.classList.remove('active');
   });
 
-  // Close popup on outside click
   limitPopup.addEventListener('click', (e) => {
     if (e.target === limitPopup) {
       limitPopup.classList.remove('active');
     }
   });
 
-  // Close wheel overlay
+  // ==================== CLOSE WHEEL ====================
   closeWheelBtn.addEventListener('click', () => {
     wheelOverlay.classList.remove('active');
     cardContent.classList.remove('hidden');
   });
 
-  // Cloudflare Worker endpoints
+  // ==================== CLOUDFLARE WORKER ENDPOINTS ====================
   const SPIN_CHECK_URL = "https://spin-check.shadowlegendcg.workers.dev/spin-check";
   const VERIFY_URL = "https://ln-verify.shadowlegendcg.workers.dev";
 
-  // Weighted prize generation
+  // ==================== PRIZE GENERATION ====================
   function generatePrize() {
     const rand = Math.random();
     if (rand < 0.70) {
@@ -797,14 +874,13 @@
     }
   }
 
-  // Wheel config
+  // ==================== WHEEL ====================
   const SLICES = 50;
   const SLICE_ANGLE_DEG = 360 / SLICES;
   const CENTER_X = 200;
   const CENTER_Y = 200;
   const RADIUS = 200;
 
-  // Draw the wheel
   function drawWheel() {
     wheelCanvas.width = 400;
     wheelCanvas.height = 400;
@@ -862,9 +938,14 @@
     wheelCanvas.style.transition = '';
   }
 
-  // Auto-verify Lightning address
+  // ==================== ADDRESS VERIFICATION ====================
   async function autoVerifyAddress() {
     const address = lightningInput.value.trim();
+    
+    // Save address if valid
+    if (address && address.includes('@')) {
+      saveAddress(address);
+    }
     
     if (!address || !address.includes('@')) {
       if (isAddressVerified) {
@@ -916,6 +997,7 @@
     }
   }
 
+  // ==================== EVENT LISTENERS ====================
   lightningInput.addEventListener('input', () => {
     autoVerifyAddress();
   });
@@ -924,9 +1006,9 @@
     autoVerifyAddress();
   });
 
+  // ==================== UPDATE WHEEL VISIBILITY ====================
   function updateWheelVisibility() {
     if (isAddressVerified && isCaptchaResolved && currentVerifiedAddress) {
-      // Show wheel overlay, hide card content
       wheelOverlay.classList.add('active');
       cardContent.classList.add('hidden');
       resetWheelTransform();
@@ -941,7 +1023,6 @@
         wheelStatus.style.borderColor = "rgba(74,222,128,0.2)";
       }
     } else {
-      // Hide wheel overlay, show card content
       wheelOverlay.classList.remove('active');
       cardContent.classList.remove('hidden');
       
@@ -958,6 +1039,7 @@
     }
   }
 
+  // ==================== CAPTCHA ====================
   function onCaptchaSuccess() {
     if (isCaptchaResolved) return;
     isCaptchaResolved = true;
@@ -981,7 +1063,7 @@
     }
   };
 
-  // SPIN button handler
+  // ==================== SPIN BUTTON ====================
   centerSpinBtn.onclick = async () => {
     if (isSpinning) {
       wheelStatus.innerHTML = "⏳ Spin already in progress!";
@@ -1021,7 +1103,6 @@
         const checkData = await checkRes.json();
         
         if (!checkData.allowed) {
-          // Show popup instead of status message
           let errorMsg = "This Lightning address has already claimed today. Come back tomorrow!";
           if (checkData.reason === "ip_limit") errorMsg = "Your IP has already claimed today. Come back tomorrow!";
           if (checkData.reason === "address_limit") errorMsg = "This Lightning address has already claimed today. Come back tomorrow!";
@@ -1092,8 +1173,16 @@
     }
   };
 
-  // Load ad iframe safely and redraw wheel
+  // ==================== LOAD SAVED ADDRESS ON STARTUP ====================
   window.addEventListener('load', () => {
+    const savedAddress = getSavedAddress();
+    if (savedAddress) {
+      lightningInput.value = savedAddress;
+      showSavedIndicator(savedAddress);
+      // Auto-verify after a short delay
+      setTimeout(autoVerifyAddress, 500);
+    }
+    
     const iframeAd = document.querySelector('.ad-iframe');
     if (iframeAd) {
       iframeAd.src = "https://acceptable.a-ads.com/2436395/?size=Adaptive";
