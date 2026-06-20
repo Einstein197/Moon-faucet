@@ -457,7 +457,7 @@
     .wheel-result p { color: var(--text-2); font-size: 1rem; line-height: 1.5; margin-bottom: 0; }
     .wheel-result .result-sub { color: var(--text-3); font-size: 0.85rem; margin-top: 6px; }
 
-    /* Wheel Popup */
+    /* Wheel Popup - Daily Limit */
     .wheel-popup {
       position: absolute;
       top: 50%;
@@ -612,8 +612,8 @@
       <header class="topbar">
         <div class="topbar-left">
           <div class="topbar-logo">
-            <img src="moon.png" alt="Moon">
-            <span>MOON FAUCET</span>
+            <img src="moon.png" alt="Moon" onerror="this.style.display='none'">
+            <span>MOON</span>
           </div>
         </div>
         <div class="topbar-right">
@@ -674,7 +674,7 @@
                   <div class="wheel-popup" id="wheelPopup">
                     <span class="popup-icon">⛔</span>
                     <h3>Daily Limit Reached!</h3>
-                    <p>Try again tomorrow</p>
+                    <p id="popupMsg">Try again tomorrow</p>
                   </div>
                 </div>
               </div>
@@ -775,6 +775,7 @@
     const resultTitle = document.getElementById('resultTitle');
     const resultDesc = document.getElementById('resultDesc');
     const resultSub = document.getElementById('resultSub');
+    const popupMsg = document.getElementById('popupMsg');
     const testModeBanner = document.getElementById('testModeBanner');
     const testModeToggle = document.getElementById('testModeToggle');
     const totalEarnedEl = document.getElementById('totalEarned');
@@ -844,11 +845,6 @@
       currentVerifiedAddress = null;
       totalEarnedEl.textContent = '0';
       spinsTodayEl.textContent = '0';
-      // Reset UI
-      if (wheelOverlay.classList.contains('active')) {
-        wheelOverlay.classList.remove('active');
-        cardContent.classList.remove('hidden');
-      }
       updateWheelVisibility();
       toast('Address cleared', 'info');
       closeModal('settingsModal');
@@ -883,7 +879,8 @@
     }
 
     // ==================== WHEEL POPUP ====================
-    function showWheelPopup() {
+    function showWheelPopup(msg) {
+      if (msg) popupMsg.textContent = msg;
       wheelPopup.classList.add('show');
       clearTimeout(popupTimeout);
       popupTimeout = setTimeout(function() {
@@ -1176,14 +1173,21 @@
           const checkRes = await fetch(checkUrl);
           const checkData = await checkRes.json();
           
+          // If not allowed, show popup and exit
           if (!checkData.allowed) {
-            showWheelPopup();
+            let msg = 'Daily limit reached! Try again tomorrow.';
+            if (checkData.reason === 'ip_limit') {
+              msg = 'Your IP has already claimed today. Try again tomorrow!';
+            } else if (checkData.reason === 'address_limit') {
+              msg = 'This address has already claimed today. Try again tomorrow!';
+            }
+            showWheelPopup(msg);
             return;
           }
         } catch (err) {
           console.error('Error checking limit:', err);
-          statusMsgDiv.innerHTML = "⚠️ Could not check limit. Try again.";
-          return;
+          // If API fails, still allow spin (fallback)
+          statusMsgDiv.innerHTML = "⚠️ Could not check limit. Proceeding...";
         }
       }
 
@@ -1221,7 +1225,7 @@
           
           if (!spinData.success) {
             if (spinData.message === 'Limit reached') {
-              showWheelPopup();
+              showWheelPopup('Daily limit reached! Try again tomorrow.');
               centerSpinBtn.disabled = false;
               centerSpinBtn.innerText = "SPIN";
               isSpinning = false;
