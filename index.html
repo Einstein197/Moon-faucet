@@ -176,63 +176,11 @@
       min-height: 500px;
     }
 
-    /* Saved Address Indicator */
-    .saved-indicator {
-      display: none;
-      font-size: 0.85rem;
-      color: #4ade80;
-      margin-top: -16px;
-      margin-bottom: 16px;
-      text-align: left;
-      padding: 0 4px;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .saved-indicator.show {
-      display: flex;
-    }
-
-    .saved-indicator .clear-btn {
-      background: none;
-      border: none;
-      color: #ff3366;
-      cursor: pointer;
-      font-size: 0.8rem;
-      text-decoration: underline;
-      font-family: 'Segoe UI', 'Poppins', sans-serif;
-      padding: 0 4px;
-    }
-
-    .saved-indicator .clear-btn:hover {
-      color: #ff6633;
-    }
-
-    .card-content {
-      transition: opacity 0.4s ease;
-    }
-
-    .card-content.hidden {
-      opacity: 0;
-      pointer-events: none;
-      display: none;
-    }
-
-    h1 {
-      font-size: 3.2rem;
-      margin: 0 0 12px 0;
-      background: linear-gradient(135deg, #FFD966, #FFA41C);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      letter-spacing: -0.5px;
-    }
-
-    .sub {
-      color: #ccc;
-      margin-bottom: 32px;
-      font-size: 1.2rem;
-      font-weight: 400;
+    /* Input wrapper for clear button */
+    .input-wrapper {
+      position: relative;
+      width: 100%;
+      margin-bottom: 28px;
     }
 
     .light-input {
@@ -245,7 +193,7 @@
       color: white;
       outline: none;
       transition: 0.2s;
-      margin-bottom: 28px;
+      padding-right: 80px;
     }
     .light-input:focus {
       border-color: #FFD966;
@@ -254,6 +202,38 @@
     .light-input::placeholder {
       font-size: 1.2rem;
       color: #667;
+    }
+    .light-input.has-saved {
+      border-color: #4ade80;
+      padding-right: 80px;
+    }
+
+    .clear-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 51, 102, 0.15);
+      border: 1px solid rgba(255, 51, 102, 0.3);
+      color: #ff3366;
+      padding: 6px 14px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'Segoe UI', 'Poppins', sans-serif;
+      display: none;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .clear-btn.show {
+      display: block;
+    }
+
+    .clear-btn:hover {
+      background: rgba(255, 51, 102, 0.25);
+      transform: translateY(-50%) scale(1.05);
     }
 
     .captcha-box {
@@ -507,9 +487,15 @@
       .light-input {
         padding: 18px 22px;
         font-size: 1.1rem;
+        padding-right: 70px;
       }
       .light-input::placeholder {
         font-size: 1rem;
+      }
+      .clear-btn {
+        font-size: 0.7rem;
+        padding: 4px 10px;
+        right: 8px;
       }
       .status-message {
         font-size: 0.95rem;
@@ -547,9 +533,6 @@
         padding: 6px 12px;
         top: 12px;
         right: 16px;
-      }
-      .saved-indicator {
-        font-size: 0.75rem;
       }
       .wheel-popup {
         padding: 20px 20px;
@@ -640,11 +623,9 @@
       <h1>🌕 MOON Faucet</h1>
       <div class="sub">⚡ verify address → solve captcha → spin & win sats!</div>
       
-      <input type="text" id="lightningAddress" class="light-input" placeholder="cat@discoverlightning.org" autocomplete="off">
-      
-      <div class="saved-indicator" id="savedIndicator">
-        💾 Saved: <span id="savedAddressDisplay"></span>
-        <button class="clear-btn" id="clearSavedBtn">(clear)</button>
+      <div class="input-wrapper">
+        <input type="text" id="lightningAddress" class="light-input" placeholder="cat@discoverlightning.org" autocomplete="off">
+        <button class="clear-btn" id="clearSavedBtn">✕ Clear</button>
       </div>
       
       <div id="captchaContainer" class="captcha-box"></div>
@@ -687,8 +668,6 @@
   const unlockTestBtn = document.getElementById('unlockTestBtn');
   const closeModalBtn = document.getElementById('closeModalBtn');
   const modalError = document.getElementById('modalError');
-  const savedIndicator = document.getElementById('savedIndicator');
-  const savedAddressDisplay = document.getElementById('savedAddressDisplay');
   const clearSavedBtn = document.getElementById('clearSavedBtn');
   const wheelPopup = document.getElementById('wheelPopup');
 
@@ -712,7 +691,7 @@
   function saveAddress(address) {
     if (address && address.includes('@')) {
       localStorage.setItem('moonFaucetAddress', address);
-      showSavedIndicator(address);
+      showClearButton(true);
     }
   }
 
@@ -722,27 +701,28 @@
 
   function clearSavedAddress() {
     localStorage.removeItem('moonFaucetAddress');
-    savedIndicator.classList.remove('show');
     lightningInput.value = '';
+    lightningInput.classList.remove('has-saved');
+    showClearButton(false);
     lightningInput.focus();
     isAddressVerified = false;
     currentVerifiedAddress = null;
     updateWheelVisibility();
   }
 
-  function showSavedIndicator(address) {
-    if (address && address.includes('@')) {
-      savedAddressDisplay.textContent = address;
-      savedIndicator.classList.add('show');
+  function showClearButton(show) {
+    if (show) {
+      clearSavedBtn.classList.add('show');
+      lightningInput.classList.add('has-saved');
     } else {
-      savedIndicator.classList.remove('show');
+      clearSavedBtn.classList.remove('show');
+      lightningInput.classList.remove('has-saved');
     }
   }
 
   // ==================== WHEEL POPUP ====================
   function showWheelPopup() {
     wheelPopup.classList.add('show');
-    // Auto-hide after 3 seconds
     clearTimeout(popupTimeout);
     popupTimeout = setTimeout(() => {
       wheelPopup.classList.remove('show');
@@ -913,6 +893,8 @@
     
     if (address && address.includes('@')) {
       saveAddress(address);
+    } else {
+      showClearButton(false);
     }
     
     if (!address || !address.includes('@')) {
@@ -1071,9 +1053,7 @@
         const checkData = await checkRes.json();
         
         if (!checkData.allowed) {
-          // Show popup centered on wheel
           showWheelPopup();
-          
           centerSpinBtn.disabled = false;
           centerSpinBtn.innerText = "SPIN";
           isSpinning = false;
@@ -1138,7 +1118,7 @@
     const savedAddress = getSavedAddress();
     if (savedAddress) {
       lightningInput.value = savedAddress;
-      showSavedIndicator(savedAddress);
+      showClearButton(true);
       setTimeout(autoVerifyAddress, 500);
     }
     
