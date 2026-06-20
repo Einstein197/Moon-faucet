@@ -394,79 +394,53 @@
       transform: scale(1.1);
     }
 
-    /* Popup Overlay for Daily Limit */
-    .popup-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(8px);
-      z-index: 9999;
-      display: none;
-      justify-content: center;
-      align-items: center;
-      animation: fadeInPopup 0.3s ease;
-    }
-
-    .popup-overlay.active {
-      display: flex;
-    }
-
-    @keyframes fadeInPopup {
-      0% { opacity: 0; transform: scale(0.9); }
-      100% { opacity: 1; transform: scale(1); }
-    }
-
-    .popup-box {
-      background: linear-gradient(145deg, #1a1a2e, #0a0f1e);
-      border-radius: 48px;
-      padding: 48px 40px;
-      max-width: 480px;
-      width: 90%;
+    /* Wheel Popup - centered over the wheel */
+    .wheel-popup {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.92);
+      backdrop-filter: blur(12px);
+      border-radius: 32px;
+      padding: 32px 40px;
       text-align: center;
+      z-index: 30;
       border: 2px solid #ff6633;
       box-shadow: 0 0 60px rgba(255, 51, 102, 0.3);
-      position: relative;
+      animation: popIn 0.4s ease;
+      min-width: 280px;
+      max-width: 90%;
+      display: none;
     }
 
-    .popup-box .popup-icon {
-      font-size: 64px;
-      margin-bottom: 16px;
+    .wheel-popup.show {
       display: block;
     }
 
-    .popup-box h2 {
+    @keyframes popIn {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .wheel-popup .popup-icon {
+      font-size: 48px;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .wheel-popup h3 {
       color: #ff6633;
-      font-size: 1.8rem;
-      margin-bottom: 12px;
+      font-size: 1.6rem;
       font-weight: 700;
+      margin-bottom: 8px;
     }
 
-    .popup-box p {
+    .wheel-popup p {
       color: #ccc;
-      font-size: 1.1rem;
-      line-height: 1.6;
-      margin-bottom: 24px;
-    }
-
-    .popup-box .popup-btn {
-      background: linear-gradient(135deg, #ff6633, #ff3366);
-      border: none;
-      padding: 14px 40px;
-      border-radius: 60px;
-      font-weight: 600;
-      font-size: 1.1rem;
-      cursor: pointer;
-      color: white;
-      transition: all 0.2s ease;
-      font-family: 'Segoe UI', 'Poppins', sans-serif;
-    }
-
-    .popup-box .popup-btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 8px 30px rgba(255, 51, 102, 0.4);
+      font-size: 1rem;
+      line-height: 1.5;
+      margin-bottom: 0;
     }
 
     @keyframes fadePop {
@@ -502,6 +476,16 @@
       }
       .banner-link, .ad-frame, .test-mode-banner {
         max-width: 100%;
+      }
+      .wheel-popup {
+        padding: 24px 28px;
+        min-width: 220px;
+      }
+      .wheel-popup h3 {
+        font-size: 1.3rem;
+      }
+      .wheel-popup .popup-icon {
+        font-size: 36px;
       }
     }
 
@@ -564,25 +548,22 @@
         top: 12px;
         right: 16px;
       }
-      .popup-box {
-        padding: 32px 24px;
-        border-radius: 32px;
-      }
-      .popup-box h2 {
-        font-size: 1.4rem;
-      }
-      .popup-box p {
-        font-size: 0.95rem;
-      }
-      .popup-box .popup-icon {
-        font-size: 48px;
-      }
-      .popup-box .popup-btn {
-        padding: 12px 32px;
-        font-size: 1rem;
-      }
       .saved-indicator {
         font-size: 0.75rem;
+      }
+      .wheel-popup {
+        padding: 20px 20px;
+        min-width: 180px;
+        border-radius: 24px;
+      }
+      .wheel-popup h3 {
+        font-size: 1.1rem;
+      }
+      .wheel-popup p {
+        font-size: 0.85rem;
+      }
+      .wheel-popup .popup-icon {
+        font-size: 30px;
       }
     }
 
@@ -607,6 +588,19 @@
         padding: 20px 16px;
         min-height: 300px;
       }
+      .wheel-popup {
+        padding: 16px 16px;
+        min-width: 150px;
+      }
+      .wheel-popup h3 {
+        font-size: 1rem;
+      }
+      .wheel-popup p {
+        font-size: 0.8rem;
+      }
+      .wheel-popup .popup-icon {
+        font-size: 24px;
+      }
     }
   </style>
   <script src="https://js.hcaptcha.com/1/api.js?onload=hcaptchaOnLoad" async defer></script>
@@ -628,16 +622,6 @@
       <button id="closeModalBtn">Cancel</button>
     </div>
     <div id="modalError" class="error-msg"></div>
-  </div>
-</div>
-
-<!-- Daily Limit Popup -->
-<div class="popup-overlay" id="limitPopup">
-  <div class="popup-box">
-    <span class="popup-icon">⛔</span>
-    <h2>Daily Limit Reached!</h2>
-    <p id="popupMessage">This Lightning address has already claimed today. Come back tomorrow!</p>
-    <button class="popup-btn" id="popupCloseBtn">Got it</button>
   </div>
 </div>
 
@@ -668,13 +652,20 @@
       <div id="statusMsg" class="status-message">🔒 Enter Lightning address & solve captcha to unlock wheel</div>
     </div>
 
-    <!-- Wheel Overlay (no status message inside) -->
+    <!-- Wheel Overlay with centered popup -->
     <div class="wheel-overlay" id="wheelOverlay">
       <button class="close-wheel-btn" id="closeWheelBtn">✕</button>
       <div class="wheel-relative">
         <div class="wheel-pointer">▼</div>
         <canvas id="wheelCanvas" width="400" height="400"></canvas>
         <button id="centerSpinBtn" class="spin-center-btn">SPIN</button>
+        
+        <!-- Centered Popup Over the Wheel -->
+        <div class="wheel-popup" id="wheelPopup">
+          <span class="popup-icon">⛔</span>
+          <h3>Daily Limit Reached!</h3>
+          <p>Try again tomorrow</p>
+        </div>
       </div>
     </div>
   </div>
@@ -696,12 +687,10 @@
   const unlockTestBtn = document.getElementById('unlockTestBtn');
   const closeModalBtn = document.getElementById('closeModalBtn');
   const modalError = document.getElementById('modalError');
-  const limitPopup = document.getElementById('limitPopup');
-  const popupMessage = document.getElementById('popupMessage');
-  const popupCloseBtn = document.getElementById('popupCloseBtn');
   const savedIndicator = document.getElementById('savedIndicator');
   const savedAddressDisplay = document.getElementById('savedAddressDisplay');
   const clearSavedBtn = document.getElementById('clearSavedBtn');
+  const wheelPopup = document.getElementById('wheelPopup');
 
   // State
   let isCaptchaResolved = false;
@@ -710,6 +699,7 @@
   let hcaptchaWidgetId = null;
   let isSpinning = false;
   let isTestMode = false;
+  let popupTimeout = null;
 
   // Keyboard shortcut: Press 'T' three times quickly
   let tPressCount = 0;
@@ -735,7 +725,6 @@
     savedIndicator.classList.remove('show');
     lightningInput.value = '';
     lightningInput.focus();
-    // Reset verification state
     isAddressVerified = false;
     currentVerifiedAddress = null;
     updateWheelVisibility();
@@ -748,6 +737,16 @@
     } else {
       savedIndicator.classList.remove('show');
     }
+  }
+
+  // ==================== WHEEL POPUP ====================
+  function showWheelPopup() {
+    wheelPopup.classList.add('show');
+    // Auto-hide after 3 seconds
+    clearTimeout(popupTimeout);
+    popupTimeout = setTimeout(() => {
+      wheelPopup.classList.remove('show');
+    }, 3000);
   }
 
   // ==================== KEYBOARD SHORTCUTS ====================
@@ -814,21 +813,12 @@
   // ==================== CLEAR SAVED ADDRESS ====================
   clearSavedBtn.addEventListener('click', clearSavedAddress);
 
-  // ==================== POPUP ====================
-  popupCloseBtn.addEventListener('click', () => {
-    limitPopup.classList.remove('active');
-  });
-
-  limitPopup.addEventListener('click', (e) => {
-    if (e.target === limitPopup) {
-      limitPopup.classList.remove('active');
-    }
-  });
-
   // ==================== CLOSE WHEEL ====================
   closeWheelBtn.addEventListener('click', () => {
     wheelOverlay.classList.remove('active');
     cardContent.classList.remove('hidden');
+    wheelPopup.classList.remove('show');
+    clearTimeout(popupTimeout);
     statusMsgDiv.innerHTML = "🔒 Enter Lightning address & solve captcha to unlock wheel";
     statusMsgDiv.style.background = "#000000aa";
   });
@@ -921,7 +911,6 @@
   async function autoVerifyAddress() {
     const address = lightningInput.value.trim();
     
-    // Save address if valid
     if (address && address.includes('@')) {
       saveAddress(address);
     }
@@ -1002,6 +991,8 @@
     } else {
       wheelOverlay.classList.remove('active');
       cardContent.classList.remove('hidden');
+      wheelPopup.classList.remove('show');
+      clearTimeout(popupTimeout);
       
       if (isAddressVerified && !isCaptchaResolved) {
         statusMsgDiv.innerHTML = "🔐 Address verified! Now solve the hCaptcha to unlock the wheel.";
@@ -1080,12 +1071,8 @@
         const checkData = await checkRes.json();
         
         if (!checkData.allowed) {
-          let errorMsg = "This Lightning address has already claimed today. Come back tomorrow!";
-          if (checkData.reason === "ip_limit") errorMsg = "Your IP has already claimed today. Come back tomorrow!";
-          if (checkData.reason === "address_limit") errorMsg = "This Lightning address has already claimed today. Come back tomorrow!";
-          
-          popupMessage.textContent = errorMsg;
-          limitPopup.classList.add('active');
+          // Show popup centered on wheel
+          showWheelPopup();
           
           centerSpinBtn.disabled = false;
           centerSpinBtn.innerText = "SPIN";
@@ -1152,7 +1139,6 @@
     if (savedAddress) {
       lightningInput.value = savedAddress;
       showSavedIndicator(savedAddress);
-      // Auto-verify after a short delay
       setTimeout(autoVerifyAddress, 500);
     }
     
