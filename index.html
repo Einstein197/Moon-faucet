@@ -705,7 +705,7 @@
     🔐 TEST MODE ACTIVE — Unlimited spins, fake sats only 🔐
   </div>
 
-  <script src="https://js.hcaptcha.com/1/api.js?onload=hcaptchaOnLoad" async defer></script>
+    <script src="https://js.hcaptcha.com/1/api.js?onload=hcaptchaOnLoad" async defer></script>
   <script>
     // ==================== TOAST ====================
     var toastTimer = null;
@@ -790,6 +790,7 @@
     let isTestMode = false;
     let popupTimeout = null;
     let resultTimeout = null;
+    let userStats = { totalEarned: 0, spinsToday: 0 };
 
     // ==================== WORKER ENDPOINTS ====================
     const WORKER_URL = "https://spin-check.shadowlegendcg.workers.dev";
@@ -805,16 +806,52 @@
       else return 50;
     }
 
+    // ==================== LOAD STATS FROM WORKER ====================
+    async function loadStats(address) {
+      if (!address) return;
+      try {
+        const response = await fetch(WORKER_URL + '/stats?address=' + encodeURIComponent(address));
+        const data = await response.json();
+        if (data.success) {
+          userStats = data.stats;
+          totalEarnedEl.textContent = userStats.totalEarned || 0;
+          spinsTodayEl.textContent = userStats.spinsToday || 0;
+        }
+      } catch (err) {
+        console.error('Error loading stats:', err);
+      }
+    }
+
     // ==================== CHECK DAILY LIMIT ====================
     async function checkDailyLimit(address) {
       try {
-        const url = WORKER_URL + '/spin-check?address=' + encodeURIComponent(address);
-        const response = await fetch(url);
+        const response = await fetch(WORKER_URL + '/spin-check?address=' + encodeURIComponent(address));
         const data = await response.json();
         return data;
       } catch (err) {
         console.error('Error checking limit:', err);
         return { allowed: false, reason: 'error' };
+      }
+    }
+
+    // ==================== SAVE SPIN TO WORKER ====================
+    async function saveSpin(address, prize) {
+      try {
+        const response = await fetch(WORKER_URL + '/spin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: address, prize: prize })
+        });
+        const data = await response.json();
+        if (data.success) {
+          userStats = data.stats;
+          totalEarnedEl.textContent = userStats.totalEarned || 0;
+          spinsTodayEl.textContent = userStats.spinsToday || 0;
+        }
+        return data;
+      } catch (err) {
+        console.error('Error saving spin:', err);
+        return { success: false };
       }
     }
 
@@ -879,6 +916,8 @@
       const address = lightningInput.value.trim();
       if (address && address.includes('@')) {
         saveAddress(address);
+        // Load stats when address is entered
+        await loadStats(address);
       } else {
         showClearButton(false);
       }
@@ -904,6 +943,8 @@
           isAddressVerified = true;
           currentVerifiedAddress = address.toLowerCase();
           statusMsgDiv.innerHTML = "✅ Lightning address verified!";
+          // Load stats after verification
+          await loadStats(currentVerifiedAddress);
           updateWheelVisibility();
         } else {
           if (isAddressVerified) { isAddressVerified = false;
@@ -1041,6 +1082,7 @@
       lightningInput.focus();
       isAddressVerified = false;
       currentVerifiedAddress = null;
+      userStats = { totalEarned: 0, spinsToday: 0 };
       totalEarnedEl.textContent = '0';
       spinsTodayEl.textContent = '0';
       updateWheelVisibility();
@@ -1154,9 +1196,17 @@
       if (!isTestMode) {
         const limitCheck = await checkDailyLimit(currentVerifiedAddress);
         
-        // If not allowed, show popup and exit
         if (!limitCheck.allowed) {
           let msg = 'Daily limit reached! Try again tomorrow.';
+          if (limitCheck.reason === 'ip_limit') {
+            msg = 'Your IP has already claimed today. Try again tomorrow!';
+          } else if (limitCheck.reason === 'address_limit') {
+            msg = 'This address has already claimed today. Try again tomorrow!';
+          } else if (limitCheck.reason === 'missing_address') {
+            msg = 'Please enter a valid Lightning address.';
+          } else if (limitCheck.reason === 'error') {
+            msg = 'Could not check limit. Please try again.';
+          }
           showWheelPopup(msg);
           return;
         }
@@ -1183,6 +1233,14 @@
       try {
         // Generate prize
         const prizeSats = generatePrize();
+
+        // Save spin to worker (unless test mode)
+        if (!isTestMode) {
+          const saveResult = await saveSpin(currentVerifiedAddress, prizeSats);
+          if (!saveResult.success) {
+            throw new Error('Failed to save spin');
+          }
+        }
 
         const targetNumber = Math.min(50, Math.max(1, prizeSats));
         const winningIndex = (SLICES - targetNumber) % SLICES;
@@ -1219,6 +1277,7 @@
           statusMsgDiv.style.background = "rgba(255,215,0,0.1)";
           statusMsgDiv.style.borderColor = "rgba(255,215,0,0.2)";
           toast('🎉 You won ' + prizeSats + ' sats!', 'success');
+          // Stats are already updated by saveSpin()
         }
         statusMsgDiv.classList.add('result-animation');
         setTimeout(function() { statusMsgDiv.classList.remove('result-animation'); }, 600);
