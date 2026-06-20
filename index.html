@@ -72,7 +72,7 @@
       backdrop-filter: blur(20px);
       position: sticky; top: 0; z-index: 50; flex-shrink: 0;
     }
-    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .topbar-left { display: flex; align-items: center; gap: 10px; }
     .topbar-logo { display: flex; align-items: center; gap: 8px; }
     .topbar-logo img { width: 28px; height: 28px; }
     .topbar-logo span { font-size: 18px; font-weight: 700; color: var(--text); }
@@ -174,33 +174,72 @@
       opacity: 0; pointer-events: none;
     }
 
-    /* ── Modal ── */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+    /* ── Centered Modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
     .modal-overlay.open { display: flex; }
-    .modal-sheet { background: #0d1225; border: 1px solid var(--glass-border); border-radius: 24px 24px 0 0; width: 100%; max-width: 540px; animation: sheetUp 0.3s cubic-bezier(0.34,1.56,0.64,1); max-height: 92vh; overflow-y: auto; }
-    @keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
-    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 0; position: sticky; top: 0; background: #0d1225; z-index: 1; }
-    .modal-title { font-size: 18px; font-weight: 700; }
-    .modal-close { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; color: var(--text-2); }
-    .modal-close:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+    .modal-sheet {
+      background: #0d1225;
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 460px;
+      animation: modalFadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.9) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 24px 0;
+      position: sticky;
+      top: 0;
+      background: #0d1225;
+      z-index: 1;
+      border-radius: 24px 24px 0 0;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      font-size: 18px;
+      font-family: 'Inter', sans-serif;
+    }
+    .modal-close:hover { background: rgba(255, 255, 255, 0.15); color: var(--text); }
     .modal-body { padding: 24px; }
 
-    /* ── Banner ── */
-    .banner-link {
-      display: block;
-      width: 100%;
-      max-width: 860px;
-      margin: 0 auto 16px auto;
-      transition: transform 0.2s ease;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 12px 28px rgba(0,0,0,0.3);
-    }
-    .banner-link:hover { transform: scale(1.01); }
-    .banner-img { width: 100%; height: auto; display: block; object-fit: cover; }
-
+    /* ── Ad Frame ── */
     .ad-frame {
-      margin: 12px auto 18px auto;
+      margin: 0 auto 18px auto;
       width: 100%;
       max-width: 860px;
       text-align: center;
@@ -457,6 +496,9 @@
       .wheel-popup { padding: 20px 20px; min-width: 180px; }
       .captcha-box { transform: scale(1); }
       .ad-iframe { height: 90px; }
+      .modal-sheet { max-width: 95%; margin: 0 10px; }
+      .topbar-logo span { font-size: 15px; }
+      .topbar-logo img { width: 24px; height: 24px; }
     }
     @media (max-width: 400px) {
       .wheel-relative { width: 240px; height: 240px; }
@@ -482,7 +524,7 @@
   <!-- Toast -->
   <div id="toast"></div>
 
-  <!-- Settings Modal -->
+  <!-- Settings Modal (Centered) -->
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-sheet">
       <div class="modal-header">
@@ -533,7 +575,7 @@
     </div>
   </div>
 
-  <!-- Password Modal -->
+  <!-- Password Modal (Centered) -->
   <div class="modal-overlay" id="passwordModal">
     <div class="modal-sheet">
       <div class="modal-header">
@@ -561,8 +603,8 @@
       <header class="topbar">
         <div class="topbar-left">
           <div class="topbar-logo">
-            <img src="moon.png" alt="Moon" style="width:28px; height:28px;">
-            <span>MOON</span>
+            <img src="moon.png" alt="Moon">
+            <span>MOON FAUCET</span>
           </div>
         </div>
         <div class="topbar-right">
@@ -579,11 +621,6 @@
       <div class="pages-wrap">
         <div class="pages-inner">
 
-          <!-- Banner -->
-          <a href="https://kryptonlegend.fun" class="banner-link" target="_blank" rel="noopener noreferrer">
-            <img class="banner-img" src="banner.png" alt="Moon Faucet Banner" onerror="this.src='https://placehold.co/860x150?text=Moon+Faucet'">
-          </a>
-
           <!-- Ad Frame -->
           <div class="ad-frame">
             <iframe class="ad-iframe" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation" data-aa="2436395" src="about:blank" title="advertisement"></iframe>
@@ -593,11 +630,9 @@
           <div class="page active" id="page-home">
             <div class="card" style="min-height:500px;">
               <div class="card-content" id="cardContent">
-                <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:8px;">
-                  <img src="moon.png" alt="Moon" style="width:40px; height:40px;">
-                  <h1 style="color:var(--text); font-size:2.2rem; font-weight:700; margin:0;">MOON Faucet</h1>
+                <div style="text-align:center; margin-bottom:32px;">
+                  <div style="color:var(--text-2); font-size:1rem;">⚡ verify address → solve captcha → spin & win sats!</div>
                 </div>
-                <div style="color:var(--text-2); margin-bottom:32px; font-size:1rem;">⚡ verify address → solve captcha → spin & win sats!</div>
 
                 <div class="input-wrapper">
                   <input type="text" id="lightningAddress" class="light-input" placeholder="cat@discoverlightning.org" autocomplete="off">
