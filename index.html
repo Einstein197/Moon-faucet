@@ -378,6 +378,81 @@
       border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
+    /* Popup Overlay for Daily Limit */
+    .popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      animation: fadeInPopup 0.3s ease;
+    }
+
+    .popup-overlay.active {
+      display: flex;
+    }
+
+    @keyframes fadeInPopup {
+      0% { opacity: 0; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .popup-box {
+      background: linear-gradient(145deg, #1a1a2e, #0a0f1e);
+      border-radius: 48px;
+      padding: 48px 40px;
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+      border: 2px solid #ff6633;
+      box-shadow: 0 0 60px rgba(255, 51, 102, 0.3);
+      position: relative;
+    }
+
+    .popup-box .popup-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .popup-box h2 {
+      color: #ff6633;
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    .popup-box p {
+      color: #ccc;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .popup-box .popup-btn {
+      background: linear-gradient(135deg, #ff6633, #ff3366);
+      border: none;
+      padding: 14px 40px;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      color: white;
+      transition: all 0.2s ease;
+      font-family: 'Segoe UI', 'Poppins', sans-serif;
+    }
+
+    .popup-box .popup-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 30px rgba(255, 51, 102, 0.4);
+    }
+
     @keyframes fadePop {
       0% { opacity: 0; transform: scale(0.9); }
       100% { opacity: 1; transform: scale(1); }
@@ -478,6 +553,23 @@
         padding: 12px 16px;
         min-height: 48px;
       }
+      .popup-box {
+        padding: 32px 24px;
+        border-radius: 32px;
+      }
+      .popup-box h2 {
+        font-size: 1.4rem;
+      }
+      .popup-box p {
+        font-size: 0.95rem;
+      }
+      .popup-box .popup-icon {
+        font-size: 48px;
+      }
+      .popup-box .popup-btn {
+        padding: 12px 32px;
+        font-size: 1rem;
+      }
     }
 
     @media (max-width: 380px) {
@@ -522,6 +614,16 @@
       <button id="closeModalBtn">Cancel</button>
     </div>
     <div id="modalError" class="error-msg"></div>
+  </div>
+</div>
+
+<!-- Daily Limit Popup -->
+<div class="popup-overlay" id="limitPopup">
+  <div class="popup-box">
+    <span class="popup-icon">⛔</span>
+    <h2>Daily Limit Reached!</h2>
+    <p id="popupMessage">This Lightning address has already claimed today. Come back tomorrow!</p>
+    <button class="popup-btn" id="popupCloseBtn">Got it</button>
   </div>
 </div>
 
@@ -577,6 +679,9 @@
   const unlockTestBtn = document.getElementById('unlockTestBtn');
   const closeModalBtn = document.getElementById('closeModalBtn');
   const modalError = document.getElementById('modalError');
+  const limitPopup = document.getElementById('limitPopup');
+  const popupMessage = document.getElementById('popupMessage');
+  const popupCloseBtn = document.getElementById('popupCloseBtn');
 
   // State
   let isCaptchaResolved = false;
@@ -651,6 +756,18 @@
   testModePassword.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       unlockTestBtn.click();
+    }
+  });
+
+  // Close popup
+  popupCloseBtn.addEventListener('click', () => {
+    limitPopup.classList.remove('active');
+  });
+
+  // Close popup on outside click
+  limitPopup.addEventListener('click', (e) => {
+    if (e.target === limitPopup) {
+      limitPopup.classList.remove('active');
     }
   });
 
@@ -904,10 +1021,14 @@
         const checkData = await checkRes.json();
         
         if (!checkData.allowed) {
-          let errorMsg = "Daily limit reached! ";
-          if (checkData.reason === "ip_limit") errorMsg += "Your IP has already claimed today.";
-          if (checkData.reason === "address_limit") errorMsg += "This Lightning address has already claimed today.";
-          wheelStatus.innerHTML = `⚠️ ${errorMsg} Come back tomorrow!`;
+          // Show popup instead of status message
+          let errorMsg = "This Lightning address has already claimed today. Come back tomorrow!";
+          if (checkData.reason === "ip_limit") errorMsg = "Your IP has already claimed today. Come back tomorrow!";
+          if (checkData.reason === "address_limit") errorMsg = "This Lightning address has already claimed today. Come back tomorrow!";
+          
+          popupMessage.textContent = errorMsg;
+          limitPopup.classList.add('active');
+          
           centerSpinBtn.disabled = false;
           centerSpinBtn.innerText = "SPIN";
           isSpinning = false;
