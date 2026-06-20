@@ -101,6 +101,7 @@
       border-radius: var(--radius);
       padding: 24px;
       position: relative;
+      min-height: 500px;
     }
 
     /* ── Buttons ── */
@@ -328,6 +329,14 @@
       align-items: center;
       justify-content: center;
       border: 1px solid var(--glass-border);
+    }
+
+    /* ── Card Content ── */
+    .card-content {
+      transition: opacity 0.4s ease;
+    }
+    .card-content.hidden {
+      display: none;
     }
 
     /* ── Wheel Overlay ── */
@@ -628,7 +637,8 @@
 
           <!-- Home Page -->
           <div class="page active" id="page-home">
-            <div class="card" style="min-height:500px;">
+            <div class="card">
+              <!-- Card Content -->
               <div class="card-content" id="cardContent">
                 <div style="text-align:center; margin-bottom:32px;">
                   <div style="color:var(--text-2); font-size:1rem;">⚡ verify address → solve captcha → spin & win sats!</div>
@@ -834,6 +844,11 @@
       currentVerifiedAddress = null;
       totalEarnedEl.textContent = '0';
       spinsTodayEl.textContent = '0';
+      // Reset UI
+      if (wheelOverlay.classList.contains('active')) {
+        wheelOverlay.classList.remove('active');
+        cardContent.classList.remove('hidden');
+      }
       updateWheelVisibility();
       toast('Address cleared', 'info');
       closeModal('settingsModal');
@@ -967,6 +982,7 @@
     const RADIUS = 200;
 
     function drawWheel() {
+      if (!wheelCanvas) return;
       wheelCanvas.width = 400;
       wheelCanvas.height = 400;
       const ctx = wheelCanvas.getContext('2d');
@@ -1068,7 +1084,7 @@
     function updateWheelVisibility() {
       if (isAddressVerified && isCaptchaResolved && currentVerifiedAddress) {
         wheelOverlay.classList.add('active');
-        cardContent.style.display = 'none';
+        cardContent.classList.add('hidden');
         resetWheelTransform();
         drawWheel();
         hideWheelResult();
@@ -1084,7 +1100,7 @@
         }
       } else {
         wheelOverlay.classList.remove('active');
-        cardContent.style.display = 'block';
+        cardContent.classList.remove('hidden');
         hideWheelPopup();
         hideWheelResult();
         clearTimeout(popupTimeout);
@@ -1132,7 +1148,7 @@
     // ==================== CLOSE WHEEL ====================
     closeWheelBtn.addEventListener('click', function() {
       wheelOverlay.classList.remove('active');
-      cardContent.style.display = 'block';
+      cardContent.classList.remove('hidden');
       hideWheelPopup();
       hideWheelResult();
       clearTimeout(popupTimeout);
@@ -1153,6 +1169,7 @@
         return;
       }
 
+      // Check daily limit (unless test mode)
       if (!isTestMode) {
         try {
           const checkUrl = API_URL + '/check?address=' + encodeURIComponent(currentVerifiedAddress);
@@ -1227,6 +1244,8 @@
         const extraDegrees = fullSpins * 360;
         const stopAngle = extraDegrees - (winningIndex * SLICE_ANGLE_DEG);
 
+        // Apply the rotation
+        wheelCanvas.style.transition = 'transform 2.8s cubic-bezier(0.17, 0.94, 0.32, 1.05)';
         wheelCanvas.style.transform = 'rotate(' + stopAngle + 'deg)';
         statusMsgDiv.innerHTML = "🌀 Spinning the Moon Wheel...";
 
