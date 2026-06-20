@@ -1157,15 +1157,6 @@
         // If not allowed, show popup and exit
         if (!limitCheck.allowed) {
           let msg = 'Daily limit reached! Try again tomorrow.';
-          if (limitCheck.reason === 'ip_limit') {
-            msg = 'Your IP has already claimed today. Try again tomorrow!';
-          } else if (limitCheck.reason === 'address_limit') {
-            msg = 'This address has already claimed today. Try again tomorrow!';
-          } else if (limitCheck.reason === 'missing_address') {
-            msg = 'Please enter a valid Lightning address.';
-          } else if (limitCheck.reason === 'error') {
-            msg = 'Could not check limit. Please try again.';
-          }
           showWheelPopup(msg);
           return;
         }
