@@ -613,7 +613,7 @@
         <div class="topbar-left">
           <div class="topbar-logo">
             <img src="moon.png" alt="Moon" onerror="this.style.display='none'">
-            <span>MOON FAUCET</span>
+            <span>MOON</span>
           </div>
         </div>
         <div class="topbar-right">
@@ -791,175 +791,9 @@
     let popupTimeout = null;
     let resultTimeout = null;
 
-    // ==================== CLOUDFLARE WORKER ENDPOINTS ====================
-    const API_URL = "https://spin-check.shadowlegendcg.workers.dev";
+    // ==================== WORKER ENDPOINTS ====================
+    const WORKER_URL = "https://spin-check.shadowlegendcg.workers.dev";
     const VERIFY_URL = "https://ln-verify.shadowlegendcg.workers.dev";
-
-    // ==================== LOAD USER DATA FROM DATABASE ====================
-    async function loadUserData() {
-      const address = lightningInput.value.trim();
-      if (!address || !address.includes('@')) {
-        totalEarnedEl.textContent = '--';
-        spinsTodayEl.textContent = '--';
-        return;
-      }
-
-      try {
-        const response = await fetch(API_URL + '/user?address=' + encodeURIComponent(address));
-        const data = await response.json();
-        
-        if (data && data.success) {
-          totalEarnedEl.textContent = data.totalEarned || 0;
-          spinsTodayEl.textContent = data.spinsToday || 0;
-        } else {
-          totalEarnedEl.textContent = '0';
-          spinsTodayEl.textContent = '0';
-        }
-      } catch (err) {
-        console.error('Error loading user data:', err);
-        totalEarnedEl.textContent = '?';
-        spinsTodayEl.textContent = '?';
-      }
-    }
-
-    // ==================== LOCAL STORAGE (UI ONLY) ====================
-    function saveAddress(address) {
-      if (address && address.includes('@')) {
-        localStorage.setItem('moonFaucetAddress', address);
-        showClearButton(true);
-        loadUserData();
-      }
-    }
-
-    function getSavedAddress() {
-      return localStorage.getItem('moonFaucetAddress') || '';
-    }
-
-    function clearSavedAddress() {
-      localStorage.removeItem('moonFaucetAddress');
-      lightningInput.value = '';
-      lightningInput.classList.remove('has-saved');
-      showClearButton(false);
-      lightningInput.focus();
-      isAddressVerified = false;
-      currentVerifiedAddress = null;
-      totalEarnedEl.textContent = '0';
-      spinsTodayEl.textContent = '0';
-      updateWheelVisibility();
-      toast('Address cleared', 'info');
-      closeModal('settingsModal');
-    }
-
-    function showClearButton(show) {
-      if (show) {
-        clearSavedBtn.classList.add('show');
-        lightningInput.classList.add('has-saved');
-      } else {
-        clearSavedBtn.classList.remove('show');
-        lightningInput.classList.remove('has-saved');
-      }
-    }
-
-    // ==================== WHEEL RESULT ====================
-    function showWheelResult(icon, title, desc, sub) {
-      resultIcon.textContent = icon;
-      resultTitle.textContent = title;
-      resultDesc.textContent = desc;
-      resultSub.textContent = sub || '';
-      wheelResult.classList.add('show');
-      clearTimeout(resultTimeout);
-      resultTimeout = setTimeout(function() {
-        wheelResult.classList.remove('show');
-      }, 4000);
-    }
-
-    function hideWheelResult() {
-      wheelResult.classList.remove('show');
-      clearTimeout(resultTimeout);
-    }
-
-    // ==================== WHEEL POPUP ====================
-    function showWheelPopup(msg) {
-      if (msg) popupMsg.textContent = msg;
-      wheelPopup.classList.add('show');
-      clearTimeout(popupTimeout);
-      popupTimeout = setTimeout(function() {
-        wheelPopup.classList.remove('show');
-      }, 3000);
-    }
-
-    function hideWheelPopup() {
-      wheelPopup.classList.remove('show');
-      clearTimeout(popupTimeout);
-    }
-
-    // ==================== TEST MODE ====================
-    function toggleTestMode(checked) {
-      if (checked) {
-        openModal('passwordModal');
-        testModeToggle.checked = false;
-      } else {
-        isTestMode = false;
-        testModeBanner.style.display = 'none';
-        toast('Test mode disabled', 'info');
-        statusMsgDiv.innerHTML = "🔒 Enter Lightning address & solve captcha to unlock wheel";
-        statusMsgDiv.style.background = "rgba(0,0,0,0.2)";
-        updateWheelVisibility();
-      }
-    }
-
-    let tPressCount = 0;
-    let tPressTimeout = null;
-    const TEST_MODE_PASSWORD = "moondev2024";
-
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 't' || e.key === 'T') {
-        e.preventDefault();
-        clearTimeout(tPressTimeout);
-        tPressCount++;
-        if (tPressCount === 3) {
-          openModal('passwordModal');
-          document.getElementById('testModePassword').value = '';
-          document.getElementById('modalError').innerHTML = '';
-          tPressCount = 0;
-        }
-        tPressTimeout = setTimeout(function() { tPressCount = 0; }, 800);
-      }
-    });
-
-    document.getElementById('unlockTestBtn').addEventListener('click', function() {
-      const enteredPassword = document.getElementById('testModePassword').value;
-      if (enteredPassword === TEST_MODE_PASSWORD) {
-        isTestMode = true;
-        testModeBanner.style.display = 'block';
-        testModeToggle.checked = true;
-        closeModal('passwordModal');
-        statusMsgDiv.innerHTML = "🔐 TEST MODE ACTIVE — Unlimited spins, no limits! 🔐";
-        statusMsgDiv.style.background = "rgba(255,51,102,0.15)";
-        statusMsgDiv.style.borderColor = "rgba(255,51,102,0.3)";
-        toast('Test mode activated!', 'info');
-        setTimeout(function() {
-          if (isAddressVerified && isCaptchaResolved && currentVerifiedAddress) {
-            statusMsgDiv.innerHTML = "🔐 TEST MODE: Unlimited spins! Click SPIN as many times as you want 🔐";
-          }
-          updateWheelVisibility();
-        }, 1000);
-        document.getElementById('modalError').innerHTML = "";
-      } else {
-        document.getElementById('modalError').innerHTML = "❌ Incorrect password";
-        document.getElementById('testModePassword').value = "";
-      }
-    });
-
-    document.getElementById('closeModalBtn').addEventListener('click', function() {
-      closeModal('passwordModal');
-    });
-
-    document.getElementById('testModePassword').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        document.getElementById('unlockTestBtn').click();
-      }
-    });
 
     // ==================== PRIZE GENERATION ====================
     function generatePrize() {
@@ -969,6 +803,19 @@
       else if (rand < 0.98) return Math.floor(Math.random() * 15) + 26;
       else if (rand < 0.998) return Math.floor(Math.random() * 9) + 41;
       else return 50;
+    }
+
+    // ==================== CHECK DAILY LIMIT ====================
+    async function checkDailyLimit(address) {
+      try {
+        const url = WORKER_URL + '/spin-check?address=' + encodeURIComponent(address);
+        const response = await fetch(url);
+        const data = await response.json();
+        return data;
+      } catch (err) {
+        console.error('Error checking limit:', err);
+        return { allowed: false, reason: 'error' };
+      }
     }
 
     // ==================== WHEEL ====================
@@ -1057,7 +904,6 @@
           isAddressVerified = true;
           currentVerifiedAddress = address.toLowerCase();
           statusMsgDiv.innerHTML = "✅ Lightning address verified!";
-          await loadUserData();
           updateWheelVisibility();
         } else {
           if (isAddressVerified) { isAddressVerified = false;
@@ -1142,6 +988,144 @@
       }
     };
 
+    // ==================== WHEEL RESULT ====================
+    function showWheelResult(icon, title, desc, sub) {
+      resultIcon.textContent = icon;
+      resultTitle.textContent = title;
+      resultDesc.textContent = desc;
+      resultSub.textContent = sub || '';
+      wheelResult.classList.add('show');
+      clearTimeout(resultTimeout);
+      resultTimeout = setTimeout(function() {
+        wheelResult.classList.remove('show');
+      }, 4000);
+    }
+
+    function hideWheelResult() {
+      wheelResult.classList.remove('show');
+      clearTimeout(resultTimeout);
+    }
+
+    // ==================== WHEEL POPUP ====================
+    function showWheelPopup(msg) {
+      if (msg) popupMsg.textContent = msg;
+      wheelPopup.classList.add('show');
+      clearTimeout(popupTimeout);
+      popupTimeout = setTimeout(function() {
+        wheelPopup.classList.remove('show');
+      }, 3000);
+    }
+
+    function hideWheelPopup() {
+      wheelPopup.classList.remove('show');
+      clearTimeout(popupTimeout);
+    }
+
+    // ==================== LOCAL STORAGE (UI ONLY) ====================
+    function saveAddress(address) {
+      if (address && address.includes('@')) {
+        localStorage.setItem('moonFaucetAddress', address);
+        showClearButton(true);
+      }
+    }
+
+    function getSavedAddress() {
+      return localStorage.getItem('moonFaucetAddress') || '';
+    }
+
+    function clearSavedAddress() {
+      localStorage.removeItem('moonFaucetAddress');
+      lightningInput.value = '';
+      lightningInput.classList.remove('has-saved');
+      showClearButton(false);
+      lightningInput.focus();
+      isAddressVerified = false;
+      currentVerifiedAddress = null;
+      totalEarnedEl.textContent = '0';
+      spinsTodayEl.textContent = '0';
+      updateWheelVisibility();
+      toast('Address cleared', 'info');
+      closeModal('settingsModal');
+    }
+
+    function showClearButton(show) {
+      if (show) {
+        clearSavedBtn.classList.add('show');
+        lightningInput.classList.add('has-saved');
+      } else {
+        clearSavedBtn.classList.remove('show');
+        lightningInput.classList.remove('has-saved');
+      }
+    }
+
+    // ==================== TEST MODE ====================
+    function toggleTestMode(checked) {
+      if (checked) {
+        openModal('passwordModal');
+        testModeToggle.checked = false;
+      } else {
+        isTestMode = false;
+        testModeBanner.style.display = 'none';
+        toast('Test mode disabled', 'info');
+        statusMsgDiv.innerHTML = "🔒 Enter Lightning address & solve captcha to unlock wheel";
+        statusMsgDiv.style.background = "rgba(0,0,0,0.2)";
+        updateWheelVisibility();
+      }
+    }
+
+    let tPressCount = 0;
+    let tPressTimeout = null;
+    const TEST_MODE_PASSWORD = "moondev2024";
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 't' || e.key === 'T') {
+        e.preventDefault();
+        clearTimeout(tPressTimeout);
+        tPressCount++;
+        if (tPressCount === 3) {
+          openModal('passwordModal');
+          document.getElementById('testModePassword').value = '';
+          document.getElementById('modalError').innerHTML = '';
+          tPressCount = 0;
+        }
+        tPressTimeout = setTimeout(function() { tPressCount = 0; }, 800);
+      }
+    });
+
+    document.getElementById('unlockTestBtn').addEventListener('click', function() {
+      const enteredPassword = document.getElementById('testModePassword').value;
+      if (enteredPassword === TEST_MODE_PASSWORD) {
+        isTestMode = true;
+        testModeBanner.style.display = 'block';
+        testModeToggle.checked = true;
+        closeModal('passwordModal');
+        statusMsgDiv.innerHTML = "🔐 TEST MODE ACTIVE — Unlimited spins, no limits! 🔐";
+        statusMsgDiv.style.background = "rgba(255,51,102,0.15)";
+        statusMsgDiv.style.borderColor = "rgba(255,51,102,0.3)";
+        toast('Test mode activated!', 'info');
+        setTimeout(function() {
+          if (isAddressVerified && isCaptchaResolved && currentVerifiedAddress) {
+            statusMsgDiv.innerHTML = "🔐 TEST MODE: Unlimited spins! Click SPIN as many times as you want 🔐";
+          }
+          updateWheelVisibility();
+        }, 1000);
+        document.getElementById('modalError').innerHTML = "";
+      } else {
+        document.getElementById('modalError').innerHTML = "❌ Incorrect password";
+        document.getElementById('testModePassword').value = "";
+      }
+    });
+
+    document.getElementById('closeModalBtn').addEventListener('click', function() {
+      closeModal('passwordModal');
+    });
+
+    document.getElementById('testModePassword').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        document.getElementById('unlockTestBtn').click();
+      }
+    });
+
     // ==================== CLOSE WHEEL ====================
     closeWheelBtn.addEventListener('click', function() {
       wheelOverlay.classList.remove('active');
@@ -1168,26 +1152,22 @@
 
       // Check daily limit (unless test mode)
       if (!isTestMode) {
-        try {
-          const checkUrl = API_URL + '/check?address=' + encodeURIComponent(currentVerifiedAddress);
-          const checkRes = await fetch(checkUrl);
-          const checkData = await checkRes.json();
-          
-          // If not allowed, show popup and exit
-          if (!checkData.allowed) {
-            let msg = 'Daily limit reached! Try again tomorrow.';
-            if (checkData.reason === 'ip_limit') {
-              msg = 'Your IP has already claimed today. Try again tomorrow!';
-            } else if (checkData.reason === 'address_limit') {
-              msg = 'This address has already claimed today. Try again tomorrow!';
-            }
-            showWheelPopup(msg);
-            return;
+        const limitCheck = await checkDailyLimit(currentVerifiedAddress);
+        
+        // If not allowed, show popup and exit
+        if (!limitCheck.allowed) {
+          let msg = 'Daily limit reached! Try again tomorrow.';
+          if (limitCheck.reason === 'ip_limit') {
+            msg = 'Your IP has already claimed today. Try again tomorrow!';
+          } else if (limitCheck.reason === 'address_limit') {
+            msg = 'This address has already claimed today. Try again tomorrow!';
+          } else if (limitCheck.reason === 'missing_address') {
+            msg = 'Please enter a valid Lightning address.';
+          } else if (limitCheck.reason === 'error') {
+            msg = 'Could not check limit. Please try again.';
           }
-        } catch (err) {
-          console.error('Error checking limit:', err);
-          // If API fails, still allow spin (fallback)
-          statusMsgDiv.innerHTML = "⚠️ Could not check limit. Proceeding...";
+          showWheelPopup(msg);
+          return;
         }
       }
 
@@ -1210,37 +1190,8 @@
       }
 
       try {
-        let prizeSats;
-
-        if (!isTestMode) {
-          const spinResponse = await fetch(API_URL + '/spin', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              address: currentVerifiedAddress,
-              captcha: captchaToken
-            })
-          });
-          const spinData = await spinResponse.json();
-          
-          if (!spinData.success) {
-            if (spinData.message === 'Limit reached') {
-              showWheelPopup('Daily limit reached! Try again tomorrow.');
-              centerSpinBtn.disabled = false;
-              centerSpinBtn.innerText = "SPIN";
-              isSpinning = false;
-              return;
-            }
-            throw new Error(spinData.message || 'Spin failed');
-          }
-          
-          prizeSats = spinData.prize || generatePrize();
-          await loadUserData();
-        } else {
-          prizeSats = generatePrize();
-          statusMsgDiv.innerHTML = "🔐 TEST SPIN — No sats will be sent, no limits applied 🔐";
-          await new Promise(function(res) { setTimeout(res, 500); });
-        }
+        // Generate prize
+        const prizeSats = generatePrize();
 
         const targetNumber = Math.min(50, Math.max(1, prizeSats));
         const winningIndex = (SLICES - targetNumber) % SLICES;
@@ -1265,6 +1216,7 @@
           statusMsgDiv.innerHTML = '🔐🔐🔐 TEST SPIN: You would have won ' + prizeSats + ' SATS! (No sats awarded) 🔐🔐🔐';
           statusMsgDiv.style.background = "rgba(255,51,102,0.15)";
           statusMsgDiv.style.borderColor = "rgba(255,51,102,0.3)";
+          toast('🔐 Test spin: ' + prizeSats + ' sats (no award)', 'info');
         } else {
           showWheelResult(
             '🎉',
@@ -1276,7 +1228,6 @@
           statusMsgDiv.style.background = "rgba(255,215,0,0.1)";
           statusMsgDiv.style.borderColor = "rgba(255,215,0,0.2)";
           toast('🎉 You won ' + prizeSats + ' sats!', 'success');
-          await loadUserData();
         }
         statusMsgDiv.classList.add('result-animation');
         setTimeout(function() { statusMsgDiv.classList.remove('result-animation'); }, 600);
