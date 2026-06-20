@@ -10,12 +10,15 @@
     * {
       box-sizing: border-box;
       user-select: none;
+      margin: 0;
+      padding: 0;
     }
 
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
+      min-height: 100vh;
       background: linear-gradient(145deg, #0a0f1e 0%, #1a1a2e 100%);
       font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, 'Inter', sans-serif;
       scroll-behavior: smooth;
@@ -25,22 +28,26 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       min-height: 100vh;
       padding: 20px;
+      width: 100%;
     }
 
     /* Test Mode Banner */
     .test-mode-banner {
       background: linear-gradient(95deg, #ff3366, #ff6633);
       color: white;
-      padding: 12px 24px;
+      padding: 18px 32px;
       border-radius: 60px;
       font-weight: bold;
+      font-size: 1.2rem;
       margin-bottom: 20px;
       text-align: center;
       box-shadow: 0 0 20px rgba(255,51,102,0.5);
       display: none;
+      width: 100%;
+      max-width: 900px;
     }
     .test-mode-banner.active {
       display: block;
@@ -69,10 +76,10 @@
     }
     .modal-content {
       background: linear-gradient(145deg, #1a1a2e, #0a0f1e);
-      padding: 30px;
+      padding: 40px;
       border-radius: 48px;
       text-align: center;
-      max-width: 350px;
+      max-width: 450px;
       width: 90%;
       border: 1px solid #ffb347;
       box-shadow: 0 0 50px rgba(0,0,0,0.5);
@@ -80,21 +87,23 @@
     .modal-content h3 {
       color: #ffcc44;
       margin-bottom: 20px;
+      font-size: 1.6rem;
     }
     .modal-content input {
       width: 100%;
-      padding: 12px;
+      padding: 18px;
       border-radius: 60px;
       border: none;
       margin-bottom: 15px;
-      font-size: 1rem;
+      font-size: 1.2rem;
     }
     .modal-content button {
       background: #ffcc44;
       border: none;
-      padding: 10px 20px;
+      padding: 16px 32px;
       border-radius: 60px;
       font-weight: bold;
+      font-size: 1.1rem;
       cursor: pointer;
       margin: 5px;
     }
@@ -103,15 +112,15 @@
     }
     .error-msg {
       color: #ff6666;
-      font-size: 0.8rem;
+      font-size: 1rem;
       margin-top: 10px;
     }
 
     .banner-link {
       display: block;
-      max-width: 800px;
-      width: 90%;
-      margin: 0 auto 12px auto;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto 16px auto;
       transition: transform 0.2s ease;
       border-radius: 28px;
       overflow: hidden;
@@ -128,15 +137,15 @@
     }
 
     .ad-frame {
-      margin: 10px auto 15px auto;
+      margin: 12px auto 18px auto;
       width: 100%;
+      max-width: 900px;
       text-align: center;
     }
     .ad-iframe {
       border: 0;
-      width: 728px;
-      max-width: 90%;
-      height: 90px;
+      width: 100%;
+      height: 120px;
       border-radius: 20px;
       background: rgba(0,0,0,0.3);
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
@@ -146,26 +155,28 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      align-items: center;
-      gap: 48px;
-      margin-top: 20px;
+      align-items: flex-start;
+      gap: 50px;
+      margin-top: 10px;
       width: 100%;
+      max-width: 1200px;
+      flex: 1;
     }
 
     .card {
-      background: rgba(10, 15, 30, 0.8);
+      background: rgba(10, 15, 30, 0.85);
       backdrop-filter: blur(12px);
       border-radius: 48px;
-      padding: 32px 28px;
-      max-width: 460px;
+      padding: 48px 44px;
+      max-width: 900px;
       width: 100%;
       box-shadow: 0 25px 45px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,200,100,0.2);
       text-align: center;
     }
 
     h1 {
-      font-size: 2.2rem;
-      margin: 0 0 8px 0;
+      font-size: 3.2rem;
+      margin: 0 0 12px 0;
       background: linear-gradient(135deg, #FFD966, #FFA41C);
       -webkit-background-clip: text;
       background-clip: text;
@@ -174,45 +185,56 @@
     }
 
     .sub {
-      color: #bbb;
-      margin-bottom: 24px;
-      font-size: 0.9rem;
+      color: #ccc;
+      margin-bottom: 32px;
+      font-size: 1.2rem;
+      font-weight: 400;
     }
 
     .light-input {
       width: 100%;
-      padding: 16px 20px;
-      font-size: 1rem;
+      padding: 22px 28px;
+      font-size: 1.3rem;
       background: #0f1222;
-      border: 1px solid #ffb347;
+      border: 2px solid #ffb347;
       border-radius: 60px;
       color: white;
       outline: none;
       transition: 0.2s;
-      margin-bottom: 20px;
+      margin-bottom: 28px;
     }
     .light-input:focus {
       border-color: #FFD966;
-      box-shadow: 0 0 8px #ffb34780;
+      box-shadow: 0 0 16px #ffb34780;
+    }
+    .light-input::placeholder {
+      font-size: 1.2rem;
+      color: #667;
     }
 
     .captcha-box {
       display: flex;
       justify-content: center;
-      margin: 20px 0;
-      min-height: 78px;
+      margin: 28px 0;
+      min-height: 100px;
+      transform: scale(1.2);
     }
 
     .status-message {
-      margin: 16px 0 0;
-      font-weight: 500;
-      padding: 12px;
+      margin: 24px 0 0;
+      font-weight: 600;
+      padding: 22px 28px;
       border-radius: 40px;
       background: #000000aa;
       color: #ffffff;
-      font-size: 0.9rem;
+      font-size: 1.15rem;
       transition: all 0.3s ease;
       text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      line-height: 1.5;
+      min-height: 75px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .wheel-wrapper {
@@ -220,19 +242,21 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      flex: 1;
+      min-width: 400px;
     }
     .wheel-relative {
       position: relative;
-      width: 400px;
-      height: 400px;
+      width: 500px;
+      height: 500px;
       margin: 0 auto;
     }
     .wheel-pointer {
       position: absolute;
-      top: -38px;
+      top: -46px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 50px;
+      font-size: 64px;
       filter: drop-shadow(0 8px 12px black);
       color: #ffdd88;
       z-index: 15;
@@ -245,7 +269,7 @@
       width: 100% !important;
       height: 100% !important;
       border-radius: 50%;
-      box-shadow: 0 20px 35px rgba(0,0,0,0.5), 0 0 0 5px #f7b32b, 0 0 0 12px #1f1b2e;
+      box-shadow: 0 20px 35px rgba(0,0,0,0.5), 0 0 0 6px #f7b32b, 0 0 0 16px #1f1b2e;
       transition: transform 2.8s cubic-bezier(0.17, 0.94, 0.32, 1.05);
       background: #2a2538;
     }
@@ -254,13 +278,13 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 110px;
-      height: 110px;
+      width: 140px;
+      height: 140px;
       border-radius: 50%;
       background: radial-gradient(circle at 30% 30%, #ffdd77, #ff9f1c);
       border: none;
       font-weight: bold;
-      font-size: 28px;
+      font-size: 36px;
       font-family: inherit;
       color: #2b1e2f;
       cursor: pointer;
@@ -283,12 +307,112 @@
     .result-animation {
       animation: fadePop 0.4s ease-out;
     }
-    
-    footer {
-      font-size: 11px;
-      margin-top: 30px;
-      color: #aaa;
-      text-align: center;
+
+    /* Responsive */
+    @media (max-width: 1000px) {
+      .card {
+        max-width: 100%;
+        padding: 36px 28px;
+      }
+      .wheel-wrapper {
+        min-width: auto;
+        width: 100%;
+      }
+      .wheel-relative {
+        width: 420px;
+        height: 420px;
+      }
+      .spin-center-btn {
+        width: 110px;
+        height: 110px;
+        font-size: 28px;
+      }
+      .wheel-pointer {
+        font-size: 50px;
+        top: -40px;
+      }
+      h1 {
+        font-size: 2.8rem;
+      }
+      .banner-link, .ad-frame, .test-mode-banner {
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+      .card {
+        padding: 28px 20px;
+        border-radius: 32px;
+      }
+      h1 {
+        font-size: 2.2rem;
+      }
+      .sub {
+        font-size: 1rem;
+      }
+      .light-input {
+        padding: 18px 22px;
+        font-size: 1.1rem;
+      }
+      .light-input::placeholder {
+        font-size: 1rem;
+      }
+      .status-message {
+        font-size: 0.95rem;
+        padding: 16px 20px;
+        min-height: 60px;
+      }
+      .wheel-relative {
+        width: 320px;
+        height: 320px;
+      }
+      .spin-center-btn {
+        width: 85px;
+        height: 85px;
+        font-size: 22px;
+      }
+      .wheel-pointer {
+        font-size: 40px;
+        top: -32px;
+      }
+      .captcha-box {
+        transform: scale(1);
+      }
+      .test-mode-banner {
+        font-size: 0.95rem;
+        padding: 14px 22px;
+      }
+      .banner-link, .ad-frame, .test-mode-banner {
+        max-width: 100%;
+      }
+      .ad-iframe {
+        height: 90px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .wheel-relative {
+        width: 260px;
+        height: 260px;
+      }
+      .spin-center-btn {
+        width: 70px;
+        height: 70px;
+        font-size: 18px;
+      }
+      .wheel-pointer {
+        font-size: 32px;
+        top: -26px;
+      }
+      h1 {
+        font-size: 1.8rem;
+      }
+      .card {
+        padding: 20px 16px;
+      }
     }
   </style>
   <script src="https://js.hcaptcha.com/1/api.js?onload=hcaptchaOnLoad" async defer></script>
@@ -314,7 +438,7 @@
 </div>
 
 <a href="https://kryptonlegend.fun" class="banner-link" target="_blank" rel="noopener noreferrer">
-  <img class="banner-img" src="banner.png" alt="Moon Faucet Banner" onerror="this.src='https://placehold.co/800x150?text=Moon+Faucet'">
+  <img class="banner-img" src="banner.png" alt="Moon Faucet Banner" onerror="this.src='https://placehold.co/900x150?text=Moon+Faucet'">
 </a>
 
 <div class="ad-frame">
@@ -341,8 +465,6 @@
     </div>
   </div>
 </div>
-
-<footer>🎁 Daily limit (IP + Address) • verifiable spins • fair weighted odds</footer>
 
 <script>
   // DOM elements
@@ -374,9 +496,6 @@
   // Password for test mode (CHANGE THIS TO YOUR OWN PASSWORD)
   const TEST_MODE_PASSWORD = "moondev2024";
 
-  // Check if test mode was previously enabled (session only, no persistence)
-  // Test mode does NOT persist across page reloads for security
-
   // Keyboard shortcut detection
   document.addEventListener('keydown', (e) => {
     if (e.key === 't' || e.key === 'T') {
@@ -386,7 +505,6 @@
       tPressCount++;
       
       if (tPressCount === 3) {
-        // Triple T pressed, show password modal
         passwordModal.classList.add('active');
         testModePassword.value = '';
         modalError.innerHTML = '';
@@ -409,7 +527,6 @@
       statusMsgDiv.innerHTML = "🔐 TEST MODE ACTIVE — Unlimited spins, no limits! 🔐";
       statusMsgDiv.style.background = "#663300cc";
       
-      // Update wheel visibility if address and captcha are ready
       setTimeout(() => {
         if (isAddressVerified && isCaptchaResolved && currentVerifiedAddress) {
           statusMsgDiv.innerHTML = "🔐 TEST MODE: Unlimited spins! Click SPIN as many times as you want 🔐";
@@ -417,7 +534,6 @@
         updateWheelVisibility();
       }, 1000);
       
-      // Clear modal error
       modalError.innerHTML = "";
     } else {
       modalError.innerHTML = "❌ Incorrect password";
@@ -425,19 +541,16 @@
     }
   });
 
-  // Close modal
   closeModalBtn.addEventListener('click', () => {
     passwordModal.classList.remove('active');
   });
 
-  // Close modal on outside click
   passwordModal.addEventListener('click', (e) => {
     if (e.target === passwordModal) {
       passwordModal.classList.remove('active');
     }
   });
 
-  // Enter key in password field
   testModePassword.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       unlockTestBtn.click();
@@ -509,7 +622,6 @@
       ctx.restore();
     }
     
-    // Inner circle
     ctx.beginPath();
     ctx.arc(0, 0, 45, 0, 2 * Math.PI);
     ctx.fillStyle = "#1f1a2b";
